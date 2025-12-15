@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { getGenres, getCountries } from '../services/tmdb';
-import { ChevronDown, ChevronUp, Globe, Clock, Calendar, Star } from 'lucide-react';
+import { getGenres, getCountries, getWatchProviders, getImageUrl } from '../services/tmdb';
+import { ChevronDown, ChevronUp, Globe, Clock, Calendar, Star, Tv } from 'lucide-react';
 import SearchableDropdown from './SearchableDropdown';
 
-// Countries with known active film industries to avoid empty results
+// Countries with known active film industries/consumer base
 const RELEVANT_COUNTRY_CODES = [
   'US', 'GB', 'FR', 'DE', 'JP', 'KR', 'IN', 'CN', 'ES', 'IT', 'CA', 'AU', 'BR', 'MX', 
   'SE', 'DK', 'NO', 'NL', 'PL', 'RU', 'IE', 'GR', 'HK', 'TW', 'TH', 'ID', 'PH', 
@@ -14,8 +14,11 @@ const RELEVANT_COUNTRY_CODES = [
 const FilterBar = ({ onFilterChange }) => {
   const [genres, setGenres] = useState([]);
   const [countries, setCountries] = useState([]);
+  const [providers, setProviders] = useState([]);
+  
   const [selectedGenres, setSelectedGenres] = useState([]);
-  const [selectedCountry, setSelectedCountry] = useState('');
+  const [selectedCountry, setSelectedCountry] = useState('US'); // Default to US for better UX
+  const [selectedProviders, setSelectedProviders] = useState([]);
   
   // Runtime (Dual Slider State)
   const [minRuntime, setMinRuntime] = useState(0);
@@ -26,11 +29,11 @@ const FilterBar = ({ onFilterChange }) => {
   const [yearTo, setYearTo] = useState('');
   
   const [isGenreOpen, setIsGenreOpen] = useState(false);
+  const [isProvidersOpen, setIsProvidersOpen] = useState(false);
 
   // Media Type Selection Logic
   const [mediaType, setMediaType] = useState('all'); // all, movie, tv
   const handleMediaTypeChange = (type) => {
-      // If clicking the already selected type, unselect it (go to 'all')
       if (mediaType === type) {
           setMediaType('all');
       } else {
@@ -61,19 +64,36 @@ const FilterBar = ({ onFilterChange }) => {
   useEffect(() => {
       const fetchGenres = async () => {
           try {
-              // Default to 'movie' genres for 'all' or 'movie'
               const type = mediaType === 'tv' ? 'tv' : 'movie';
               const genreList = await getGenres(type);
               setGenres(genreList);
-              
-              // Clear selections when type changes to avoid ID mismatch
-              setSelectedGenres([]);
+              setSelectedGenres([]); // Clear when type changes
           } catch (error) {
               console.error("Failed to fetch genres:", error);
           }
       };
+      
       fetchGenres();
   }, [mediaType]);
+
+  // 3. Fetch Watch Providers based on Region and Media Type
+  useEffect(() => {
+      const fetchProviders = async () => {
+          try {
+              if (!selectedCountry) return;
+              const type = mediaType === 'tv' ? 'tv' : 'movie';
+              const providerList = await getWatchProviders(type, selectedCountry);
+              
+              // Sort by priority (display_priority)
+              const sortedProviders = providerList.sort((a, b) => a.display_priority - b.display_priority);
+              setProviders(sortedProviders);
+              setSelectedProviders([]); // Clear providers when region/type changes
+          } catch (error) {
+              console.error("Failed to fetch providers:", error);
+          }
+      };
+      fetchProviders();
+  }, [mediaType, selectedCountry]);
 
   // Debounce filter updates
   useEffect(() => {
@@ -84,7 +104,12 @@ const FilterBar = ({ onFilterChange }) => {
         'with_runtime.gte': minRuntime,
         'with_runtime.lte': maxRuntime,
         'vote_average.gte': minRating > 0 ? minRating : undefined,
-        'with_origin_country': selectedCountry || undefined,
+        
+        // Changed Concept: Origin Country -> Watch Region
+        watch_region: selectedCountry || undefined, // Required for providers
+        with_watch_providers: selectedProviders.join('|') || undefined, // Pipe separated for OR logic
+        // We use OR (pipe) because usually users want "Movies on Netflix OR Hulu"
+        
         'primary_release_date.gte': yearFrom ? `${yearFrom}-01-01` : undefined,
         'primary_release_date.lte': yearTo ? `${yearTo}-12-31` : undefined,
       };
@@ -93,13 +118,20 @@ const FilterBar = ({ onFilterChange }) => {
     }, 500);
 
     return () => clearTimeout(timer);
-  }, [selectedGenres, minRuntime, maxRuntime, minRating, yearFrom, yearTo, selectedCountry, mediaType]);
+  }, [selectedGenres, selectedProviders, minRuntime, maxRuntime, minRating, yearFrom, yearTo, selectedCountry, mediaType]);
 
   const handleGenreToggle = (genreId) => {
-    const updatedGenres = selectedGenres.includes(genreId)
+    const updated = selectedGenres.includes(genreId)
       ? selectedGenres.filter(id => id !== genreId)
       : [...selectedGenres, genreId];
-    setSelectedGenres(updatedGenres);
+    setSelectedGenres(updated);
+  };
+
+  const handleProviderToggle = (providerId) => {
+    const updated = selectedProviders.includes(providerId)
+      ? selectedProviders.filter(id => id !== providerId)
+      : [...selectedProviders, providerId];
+    setSelectedProviders(updated);
   };
   
   // Logic for dual thumb slider
@@ -112,9 +144,6 @@ const FilterBar = ({ onFilterChange }) => {
       const value = Math.max(Number(e.target.value), minRuntime + 10);
       setMaxRuntime(value);
   };
-
-
-
 
   // Transform countries for dropdown
   const countryOptions = countries.map(c => ({ value: c.iso_3166_1, label: c.english_name }));
@@ -143,21 +172,63 @@ const FilterBar = ({ onFilterChange }) => {
          </div>
       </div>
 
-      {/* 1. Country & Genres Row */}
+      {/* 1. Watch Region & Providers */}
       <div className="p-4 border-b border-gray-800 space-y-4">
         <div>
             <label className="text-gray-400 text-[10px] font-black uppercase tracking-widest mb-2 flex items-center gap-2">
-                <Globe size={12} className="text-accent" /> Origin Country
+                <Globe size={12} className="text-accent" /> Watch Region
             </label>
             <SearchableDropdown 
                 options={countryOptions}
                 value={selectedCountry}
                 onChange={setSelectedCountry}
-                placeholder="Select Country"
+                placeholder="Select Region"
                 icon={<Globe size={14} />}
             />
         </div>
 
+        {/* Streaming Providers */}
+        <div>
+             <button 
+              onClick={() => setIsProvidersOpen(!isProvidersOpen)}
+              disabled={!selectedCountry}
+              className={`w-full flex justify-between items-center font-semibold transition group ${!selectedCountry ? 'opacity-50 cursor-not-allowed' : 'text-white hover:text-accent'}`}
+            >
+              <span className="flex items-center gap-2 text-[10px] uppercase text-gray-400 font-black tracking-widest group-hover:text-accent transition-colors">
+                 <Tv size={12} className="text-accent"/> Streaming Services {selectedProviders.length > 0 && <span className="bg-accent text-black px-1.5 py-0.5 rounded text-[9px]">{selectedProviders.length}</span>}
+              </span>
+              {isProvidersOpen ? <ChevronUp size={14} className="text-accent" /> : <ChevronDown size={14} />}
+            </button>
+            
+            {isProvidersOpen && (
+              <div className="grid grid-cols-3 gap-2 mt-3 animate-in fade-in slide-in-from-top-1 duration-200 max-h-60 overflow-y-auto p-1 custom-scrollbar">
+                {providers.map(provider => (
+                  <button 
+                    key={provider.provider_id} 
+                    onClick={() => handleProviderToggle(provider.provider_id)}
+                    className={`relative p-2 rounded-lg border flex flex-col items-center justify-center gap-2 transition-all group ${
+                        selectedProviders.includes(provider.provider_id) 
+                        ? 'bg-accent/10 border-accent shadow-[0_0_10px_rgba(0,229,255,0.2)]' 
+                        : 'bg-gray-900 border-gray-700 hover:border-gray-500'
+                    }`}
+                  >
+                     <img 
+                        src={getImageUrl(provider.logo_path, 'w92')} 
+                        alt={provider.provider_name}
+                        className={`w-8 h-8 rounded-md object-cover transition-all ${selectedProviders.includes(provider.provider_id) ? 'grayscale-0' : 'grayscale group-hover:grayscale-0'}`} 
+                     />
+                     <span className={`text-[9px] text-center font-bold leading-tight ${selectedProviders.includes(provider.provider_id) ? 'text-accent' : 'text-gray-400'}`}>
+                         {provider.provider_name}
+                     </span>
+                  </button>
+                ))}
+              </div>
+            )}
+        </div>
+      </div>
+
+      {/* 2. Genres */}
+      <div className="p-4 border-b border-gray-800">
         <div>
             <button 
               onClick={() => setIsGenreOpen(!isGenreOpen)}
@@ -189,7 +260,7 @@ const FilterBar = ({ onFilterChange }) => {
         </div>
       </div>
 
-      {/* 2. Compact Grid for Sliders */}
+      {/* 3. Compact Grid for Sliders */}
       <div className="p-4 space-y-6 bg-gray-900/30">
         
         {/* Release Year */}

@@ -54,6 +54,13 @@ export const getCountries = async () => {
     return response.data;
 };
 
+export const getWatchProviders = async (type = 'movie', region = 'US') => {
+    const response = await tmdb.get(`/watch/providers/${type}`, {
+        params: { watch_region: region }
+    });
+    return response.data.results;
+};
+
 export const getImageUrl = (path, size = 'original') => {
     if (!path) return '';
     return `https://image.tmdb.org/t/p/${size}${path}`;
