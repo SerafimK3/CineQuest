@@ -49,6 +49,11 @@ export const getConfiguration = async () => {
     return response.data;
 }
 
+export const getCountries = async () => {
+    const response = await tmdb.get('/configuration/countries');
+    return response.data;
+};
+
 export const getImageUrl = (path, size = 'original') => {
     if (!path) return '';
     return `https://image.tmdb.org/t/p/${size}${path}`;

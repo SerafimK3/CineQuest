@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Menu, X, Film, Shuffle, Search } from 'lucide-react';
+import { Menu, X, Film, Shuffle, Search, Gamepad2 } from 'lucide-react';
 
 const NavBar = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -28,13 +28,9 @@ const NavBar = () => {
           <div className="hidden md:flex items-center space-x-8">
             <Link to="/" className="hover:text-accent transition">Home</Link>
             <Link to="/discover" className="hover:text-accent transition">Discover</Link>
-            <Link to="/random" className="flex items-center space-x-1 hover:text-accent transition">
-              <Shuffle size={18} />
-              <span>Randomizer</span>
-            </Link>
-            <Link to="/trivia" className="flex items-center space-x-1 hover:text-accent transition text-orange-400 font-bold">
-              <span className="text-xl">🎮</span>
-              <span>Trivia</span>
+            <Link to="/games" className="hover:text-accent transition font-bold text-orange-400">Games</Link>
+            <Link to="/cinespin" className="hover:scale-105 transition-transform font-black text-transparent bg-clip-text bg-linear-to-r from-purple-400 to-pink-500">
+                CineSpin
             </Link>
             
             <div className="relative group">
@@ -68,8 +64,8 @@ const NavBar = () => {
           <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3">
             <Link to="/" className="block px-3 py-2 rounded-md hover:bg-gray-700 hover:text-accent" onClick={() => setIsOpen(false)}>Home</Link>
             <Link to="/discover" className="block px-3 py-2 rounded-md hover:bg-gray-700 hover:text-accent" onClick={() => setIsOpen(false)}>Discover</Link>
-            <Link to="/random" className="block px-3 py-2 rounded-md hover:bg-gray-700 hover:text-accent" onClick={() => setIsOpen(false)}>Randomizer</Link>
-            <Link to="/trivia" className="block px-3 py-2 rounded-md hover:bg-gray-700 text-orange-400 font-bold" onClick={() => setIsOpen(false)}>Trivia 🎮</Link>
+            <Link to="/games" className="block px-3 py-2 rounded-md hover:bg-gray-700 text-orange-400 font-bold" onClick={() => setIsOpen(false)}>Games 🎮</Link>
+            <Link to="/cinespin" className="block px-3 py-2 rounded-md hover:bg-gray-700 font-black text-transparent bg-clip-text bg-linear-to-r from-purple-400 to-pink-500" onClick={() => setIsOpen(false)}>CineSpin 🎰</Link>
           </div>
         </div>
       )}

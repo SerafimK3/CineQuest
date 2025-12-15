@@ -3,13 +3,18 @@ import { Link } from 'react-router-dom';
 import { Star } from 'lucide-react';
 import { getImageUrl } from '../services/tmdb';
 
-const MovieCard = ({ movie }) => {
+const MovieCard = ({ movie, type }) => {
+  if (!movie) return null;
+  
   const title = movie.title || movie.name;
   const date = movie.release_date || movie.first_air_date;
   const year = date ? new Date(date).getFullYear() : 'N/A';
+  
+  // Determine media type: explicit prop > object property > default 'movie'
+  const mediaType = type || movie.media_type || 'movie';
 
   return (
-    <Link to={`/movie/${movie.id}`} className="block group">
+    <Link to={`/${mediaType}/${movie.id}`} className="block group">
       <div className="relative overflow-hidden rounded-lg shadow-lg bg-surface transition transform group-hover:scale-105">
         <div className="aspect-[2/3] w-full">
           {movie.poster_path ? (

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useLocation } from 'react-router-dom';
 import { getDetails, getImageUrl } from '../services/tmdb';
 import MovieCard from '../components/MovieCard';
 import { Star, Clock, Calendar, Play, ChevronDown, Check, Search as SearchIcon } from 'lucide-react';
@@ -11,6 +11,30 @@ const PRIORITY_REGIONS = [
   "RU", "PL", "CZ", "HU", "GR", "TR", "BG", "RO", "UA", "IN", "JP", "KR", "CN", "TW", "HK", "TH", "VN", "ID", 
   "MY", "SG", "PH", "BR", "MX", "AR", "CL", "CO", "PE", "VE", "ZA", "EG", "SA", "AE", "IL", "NZ"
 ];
+
+const PROVIDER_URLS = {
+  "Netflix": "https://www.netflix.com",
+  "Disney Plus": "https://www.disneyplus.com",
+  "Amazon Prime Video": "https://www.amazon.com/primevideo",
+  "Apple TV Plus": "https://tv.apple.com",
+  "Apple TV": "https://tv.apple.com",
+  "Hulu": "https://www.hulu.com",
+  "Max": "https://www.max.com",
+  "HBO Max": "https://www.max.com",
+  "Peacock": "https://www.peacocktv.com",
+  "Peacock Premium": "https://www.peacocktv.com",
+  "Paramount Plus": "https://www.paramountplus.com",
+  "YouTube": "https://www.youtube.com",
+  "YouTube Premium": "https://www.youtube.com",
+  "Google Play Movies": "https://play.google.com/store/movies",
+  "Crunchyroll": "https://www.crunchyroll.com",
+};
+
+const getProviderLink = (providerName, title) => {
+    const baseUrl = PROVIDER_URLS[providerName];
+    if (baseUrl) return baseUrl;
+    return `https://www.google.com/search?q=watch+${encodeURIComponent(title)}+on+${encodeURIComponent(providerName)}`;
+};
 
 const tryGetRegionName = (code, regionNames) => {
     try {
@@ -140,6 +164,9 @@ const ReviewCard = ({ review }) => {
 
 const Details = () => {
   const { id } = useParams();
+  const location = useLocation();
+  const mediaType = location.pathname.includes('/tv/') ? 'tv' : 'movie'; // Determine type from URL
+
   const [movie, setMovie] = useState(null);
   const [loading, setLoading] = useState(true);
   const [region, setRegion] = useState('US');
@@ -147,7 +174,8 @@ const Details = () => {
   useEffect(() => {
     const fetchDetails = async () => {
       try {
-        const data = await getDetails('movie', id);
+        setLoading(true);
+        const data = await getDetails(mediaType, id);
         setMovie(data);
       } catch (error) {
         console.error("Failed to fetch details:", error);
@@ -156,7 +184,7 @@ const Details = () => {
       }
     };
     fetchDetails();
-  }, [id]);
+  }, [id, mediaType]);
 
   if (loading) {
     return (
@@ -166,41 +194,48 @@ const Details = () => {
     );
   }
 
-  if (!movie) return <div className="text-center text-text-primary py-20">Movie not found</div>;
+  if (!movie) return <div className="text-center text-text-primary py-20">Content not found</div>;
 
   const providers = movie['watch/providers']?.results?.[region];
   const flatrate = providers?.flatrate || [];
   const rent = providers?.rent || [];
   const buy = providers?.buy || [];
 
+  // Normalize Data for TV vs Movie
+  const title = movie.title || movie.name;
+  const releaseDate = movie.release_date || movie.first_air_date;
+  const releaseYear = releaseDate ? new Date(releaseDate).getFullYear() : 'N/A';
+  const runtime = movie.runtime || (movie.episode_run_time?.length > 0 ? movie.episode_run_time[0] : null);
+
   return (
     <div className="relative">
       {/* Backdrop */}
       <div 
-        className="absolute top-0 left-0 w-full h-[50vh] bg-cover bg-top z-0"
+        className="absolute top-0 left-0 w-full h-[30vh] md:h-[50vh] bg-cover bg-top z-0"
         style={{ backgroundImage: `url(${getImageUrl(movie.backdrop_path, 'original')})` }}
       >
         <div className="absolute inset-0 bg-linear-to-b from-transparent to-background"></div>
       </div>
 
-      <div className="container mx-auto px-4 pt-[50vh] relative z-10 pb-20">
+      <div className="container mx-auto px-4 pt-[30vh] md:pt-[50vh] relative z-10 pb-20">
         <div className="flex flex-col md:flex-row gap-8">
           {/* Poster */}
           <div className="w-full md:w-1/3 lg:w-1/4">
             <img 
               src={getImageUrl(movie.poster_path, 'w500')} 
-              alt={movie.title} 
+              alt={title} 
               className="w-full rounded-lg shadow-2xl border-4 border-surface"
             />
           </div>
 
           {/* Info */}
           <div className="w-full md:w-2/3 lg:w-3/4 text-text-primary">
-            <h1 className="text-4xl font-bold mb-2">{movie.title}</h1>
+            <h1 className="text-3xl md:text-4xl font-bold mb-2">{title}</h1>
             <div className="flex flex-wrap items-center gap-4 text-text-secondary mb-6">
-              <span className="flex items-center gap-1"><Star size={16} className="text-yellow-400" fill="currentColor"/> {movie.vote_average.toFixed(1)}</span>
-              <span className="flex items-center gap-1"><Clock size={16} /> {movie.runtime} min</span>
-              <span className="flex items-center gap-1"><Calendar size={16} /> {new Date(movie.release_date).getFullYear()}</span>
+              <span className="flex items-center gap-1"><Star size={16} className="text-yellow-400" fill="currentColor"/> {movie.vote_average?.toFixed(1)}</span>
+              {runtime && <span className="flex items-center gap-1"><Clock size={16} /> {runtime} min</span>}
+              {movie.number_of_seasons && <span className="flex items-center gap-1 text-accent font-bold">{movie.number_of_seasons} Seasons</span>}
+              <span className="flex items-center gap-1"><Calendar size={16} /> {releaseYear}</span>
               <div className="flex gap-2">
                 {movie.genres.map(g => (
                   <span key={g.id} className="bg-gray-700 px-2 py-1 rounded text-xs">{g.name}</span>
@@ -232,13 +267,20 @@ const Details = () => {
                       <h4 className="text-sm text-text-secondary mb-2">Stream</h4>
                       <div className="flex flex-wrap gap-3">
                         {flatrate.map(p => (
-                          <img 
-                            key={p.provider_id} 
-                            src={getImageUrl(p.logo_path, 'w92')} 
-                            alt={p.provider_name} 
-                            title={p.provider_name}
-                            className="w-10 h-10 rounded-md"
-                          />
+                          <a 
+                            key={p.provider_id}
+                            href={getProviderLink(p.provider_name, title)}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="hover:scale-110 transition-transform duration-200"
+                          >
+                            <img 
+                                src={getImageUrl(p.logo_path, 'w92')} 
+                                alt={p.provider_name} 
+                                title={`Watch on ${p.provider_name}`}
+                                className="w-10 h-10 rounded-md shadow-md"
+                            />
+                          </a>
                         ))}
                       </div>
                     </div>
@@ -249,13 +291,20 @@ const Details = () => {
                       <h4 className="text-sm text-text-secondary mb-2">Rent</h4>
                       <div className="flex flex-wrap gap-3">
                         {rent.map(p => (
-                          <img 
-                            key={p.provider_id} 
-                            src={getImageUrl(p.logo_path, 'w92')} 
-                            alt={p.provider_name} 
-                            title={p.provider_name}
-                            className="w-10 h-10 rounded-md"
-                          />
+                          <a 
+                            key={p.provider_id}
+                            href={getProviderLink(p.provider_name, title)}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="hover:scale-110 transition-transform duration-200"
+                          >
+                            <img 
+                                src={getImageUrl(p.logo_path, 'w92')} 
+                                alt={p.provider_name} 
+                                title={`Rent on ${p.provider_name}`}
+                                className="w-10 h-10 rounded-md shadow-md"
+                            />
+                          </a>
                         ))}
                       </div>
                     </div>
@@ -266,13 +315,20 @@ const Details = () => {
                       <h4 className="text-sm text-text-secondary mb-2">Buy</h4>
                       <div className="flex flex-wrap gap-3">
                         {buy.map(p => (
-                          <img 
-                            key={p.provider_id} 
-                            src={getImageUrl(p.logo_path, 'w92')} 
-                            alt={p.provider_name} 
-                            title={p.provider_name}
-                            className="w-10 h-10 rounded-md"
-                          />
+                          <a 
+                            key={p.provider_id}
+                            href={getProviderLink(p.provider_name, title)}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="hover:scale-110 transition-transform duration-200"
+                          >
+                            <img 
+                                src={getImageUrl(p.logo_path, 'w92')} 
+                                alt={p.provider_name} 
+                                title={`Buy on ${p.provider_name}`}
+                                className="w-10 h-10 rounded-md shadow-md"
+                            />
+                          </a>
                         ))}
                       </div>
                     </div>
@@ -289,9 +345,9 @@ const Details = () => {
           {movie.credits?.cast?.length > 0 && (
             <div>
               <h3 className="text-2xl font-bold mb-6 text-text-primary border-l-4 border-accent pl-2">Top Cast</h3>
-              <div className="flex overflow-x-auto gap-6 pb-4 scrollbar-hide">
+              <div className="flex overflow-x-auto gap-6 pb-4 scrollbar-hide snap-x snap-mandatory">
                 {movie.credits.cast.slice(0, 15).map(person => (
-                  <div key={person.id} className="min-w-[120px] w-[120px] text-center shrink-0">
+                  <div key={person.id} className="min-w-[120px] w-[120px] text-center shrink-0 snap-start">
                     <div className="w-28 h-28 rounded-full overflow-hidden mb-3 mx-auto border-2 border-gray-700 shadow-lg">
                       {person.profile_path ? (
                         <img 

@@ -5,6 +5,29 @@ import { getImageUrl } from '../services/tmdb';
 
 const HeroSlider = ({ movies }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [touchStart, setTouchStart] = useState(null);
+  const [touchEnd, setTouchEnd] = useState(null);
+
+  // Minimum swipe distance (in px) 
+  const minSwipeDistance = 50; 
+
+  const onTouchStart = (e) => {
+    setTouchEnd(null); // otherwise the swipe is fired even with usual touch events
+    setTouchStart(e.targetTouches[0].clientX);
+  };
+
+  const onTouchMove = (e) => setTouchEnd(e.targetTouches[0].clientX);
+
+  const onTouchEnd = () => {
+    if (!touchStart || !touchEnd) return;
+    const distance = touchStart - touchEnd;
+    const isLeftSwipe = distance > minSwipeDistance;
+    const isRightSwipe = distance < -minSwipeDistance;
+    if (isLeftSwipe || isRightSwipe) {
+        if (isLeftSwipe) nextSlide();
+        else prevSlide();
+    }
+  };
 
   useEffect(() => {
     if (!movies || movies.length === 0) return;
@@ -30,8 +53,11 @@ const HeroSlider = ({ movies }) => {
     <div className="relative w-full h-[60vh] md:h-[70vh] mb-10 group overflow-hidden shadow-2xl">
       {/* Slider Track */}
       <div 
-        className="flex h-full transition-transform duration-700 ease-in-out"
+        className="flex h-full transition-transform duration-700 ease-in-out touch-pan-y"
         style={{ transform: `translateX(-${currentIndex * 100}%)` }}
+        onTouchStart={onTouchStart}
+        onTouchMove={onTouchMove}
+        onTouchEnd={onTouchEnd}
       >
         {movies.map((movie) => (
           <div key={movie.id} className="min-w-full h-full relative">

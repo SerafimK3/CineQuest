@@ -16,7 +16,22 @@ const Discover = () => {
   const fetchMovies = async (currentFilters, append = false) => {
     setLoading(true);
     try {
-      const results = await discover('movie', currentFilters);
+      const { media_type = 'movie', ...apiFilters } = currentFilters;
+      const type = media_type === 'all' ? 'movie' : media_type; // Default to movie if 'all' passed, though FilterBar toggles logic
+
+      // Remap params for TV
+      if (type === 'tv') {
+          if (apiFilters['primary_release_date.gte']) {
+              apiFilters['first_air_date.gte'] = apiFilters['primary_release_date.gte'];
+              delete apiFilters['primary_release_date.gte'];
+          }
+          if (apiFilters['primary_release_date.lte']) {
+              apiFilters['first_air_date.lte'] = apiFilters['primary_release_date.lte'];
+              delete apiFilters['primary_release_date.lte'];
+          }
+      }
+
+      const results = await discover(type, apiFilters);
       if (append) {
         setMovies(prev => {
           const newMovies = results.filter(newMovie => !prev.some(m => m.id === newMovie.id));
@@ -66,7 +81,11 @@ const Discover = () => {
             <>
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-6 mb-8">
                 {movies.map(movie => (
-                  <MovieCard key={movie.id} movie={movie} />
+                  <MovieCard 
+                    key={movie.id} 
+                    movie={movie} 
+                    type={filters.media_type === 'tv' ? 'tv' : 'movie'} 
+                  />
                 ))}
               </div>
               

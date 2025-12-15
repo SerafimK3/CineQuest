@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { getTrending, getImageUrl, searchMovies } from '../services/tmdb';
+import { getTrending, getImageUrl, searchMovies, getDetails, discover } from '../../services/tmdb';
 import { Trophy, CheckCircle, XCircle, ChevronRight, Crown } from 'lucide-react';
 
 const Trivia = () => {
@@ -27,66 +27,92 @@ const Trivia = () => {
     setIsCorrect(false);
 
     try {
-        // Fetch a random page of trending movies to get variety
-        const randomPage = Math.floor(Math.random() * 10) + 1;
-        const movies = await getTrending('movie', 'week', randomPage);
+        // Fetch a random page to get a candidate
+        const randomPage = Math.floor(Math.random() * 20) + 1;
+        const initialMovies = await getTrending('movie', 'week', randomPage);
+        const correctCandidate = initialMovies[Math.floor(Math.random() * initialMovies.length)];
         
-        // Pick one random movie as the correct answer
-        const correct = movies[Math.floor(Math.random() * movies.length)];
+        // Fetch full details for the correct movie to get credits
+        // We use the discover function for distractors, so we need people IDs
+        const correctFull = await getDetails('movie', correctCandidate.id);
+        const director = correctFull.credits?.crew?.find(p => p.job === 'Director');
+        const leadActor = correctFull.credits?.cast?.[0];
 
-        // Confusing Distractors Logic
-        let similarDistractors = [];
-        try {
-            // Pick the longest word in the title (usually the most significant)
-            const words = correct.title.split(' ').filter(w => w.length > 3 && !['The', 'Part', 'Chapter'].includes(w));
-            if (words.length > 0) {
-                const keyword = words.reduce((a, b) => a.length > b.length ? a : b); 
-                const searchResults = await searchMovies(keyword);
-                similarDistractors = searchResults
-                    .filter(m => m.id !== correct.id && m.title !== correct.title) 
-                    .slice(0, 3);
-            }
-        } catch (e) {
-            console.error("Distractor search failed", e);
+        let distractorPool = [];
+
+        // STRATEGY 1: Sibling Movies (Same Director/Actor) - Hardest
+        if (director) {
+             const directorMovies = await discover('movie', { 
+                 with_people: director.id, 
+                 sort_by: 'vote_count.desc', // Popular ones
+                 page: 1 
+             });
+             distractorPool = directorMovies;
+        } else if (leadActor) {
+             const actorMovies = await discover('movie', { 
+                 with_people: leadActor.id,
+                 sort_by: 'vote_count.desc',
+                 page: 1
+             });
+             distractorPool = actorMovies;
         }
 
-        // Fallback: Same genre if no similar titles found
-        let distractorPool = similarDistractors;
+        // Filter out the correct movie itself and duplicates
+        distractorPool = distractorPool.filter(m => m.id !== correctFull.id && m.title !== correctFull.title);
+
+        // STRATEGY 2: Fallback to Similar Keywords (Existing Logic) if pool is small
         if (distractorPool.length < 3) {
-             const sameGenreMovies = movies.filter(m => 
-                m.id !== correct.id && 
-                m.title !== correct.title &&
-                m.genre_ids.some(g => correct.genre_ids.includes(g))
+             try {
+                const words = correctFull.title.split(' ').filter(w => w.length > 3);
+                if (words.length > 0) {
+                    const keyword = words.reduce((a, b) => a.length > b.length ? a : b); 
+                    const keywordMatches = await searchMovies(keyword);
+                    const validMatches = keywordMatches.filter(m => m.id !== correctFull.id && m.title !== correctFull.title);
+                    distractorPool = [...distractorPool, ...validMatches];
+                }
+             } catch (e) {
+                 // Keyword fallback failed, silent fail
+             }
+        }
+
+        // STRATEGY 3: Same Genre Fallback
+        if (distractorPool.length < 3) {
+             const sameGenreMovies = initialMovies.filter(m => 
+                m.id !== correctFull.id && 
+                m.title !== correctFull.title &&
+                m.genre_ids.some(g => correctFull.genres.map(x => x.id).includes(g))
             );
-            // Combine any similar ones we found with genre matches to fill the pool
-            // Ensure no duplicate IDs AND no duplicate TITLES
-            distractorPool = [...distractorPool, ...sameGenreMovies.filter(m => 
-                !distractorPool.find(d => d.id === m.id || d.title === m.title)
-            )];
+            distractorPool = [...distractorPool, ...sameGenreMovies];
         }
 
-        // Final Fallback: Random pool
+        // Final Safety: Randoms
         if (distractorPool.length < 3) {
-            distractorPool = [...distractorPool, ...movies.filter(m => 
-                m.id !== correct.id && 
-                m.title !== correct.title &&
-                !distractorPool.find(d => d.id === m.id || d.title === m.title)
-            )];
+             distractorPool = [...distractorPool, ...initialMovies.filter(m => m.id !== correctFull.id)];
         }
+
+        // Unique Dedup
+        const uniqueDistractors = [];
+        const seenIds = new Set([correctFull.id]);
         
-        const distractors = distractorPool
-            .slice(0, 3);
-        
-        const allOptions = [correct, ...distractors].sort(() => 0.5 - Math.random());
+        for (const m of distractorPool) {
+            if (!seenIds.has(m.id)) {
+                uniqueDistractors.push(m);
+                seenIds.add(m.id);
+            }
+            if (uniqueDistractors.length >= 3) break;
+        }
+
+        const allOptions = [correctFull, ...uniqueDistractors].sort(() => 0.5 - Math.random());
 
         // Redact title from overview
-        const redactedOverview = correct.overview.replace(
-            new RegExp(correct.title.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi'), 
+        const redactedOverview = correctFull.overview.replace(
+            new RegExp(correctFull.title.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi'), 
             '[REDACTED]'
         );
 
-        setCurrentMovie({ ...correct, overview: redactedOverview });
+        setCurrentMovie({ ...correctFull, overview: redactedOverview });
         setOptions(allOptions);
+
     } catch (error) {
         console.error("Failed to generate trivia:", error);
     } finally {
@@ -170,7 +196,7 @@ const Trivia = () => {
         {/* Left: Image & Text (Wider: 65%) */}
         <div className="w-full md:w-[65%] flex flex-col bg-black border-b md:border-b-0 md:border-r border-gray-800">
              {/* Image Container - Takes available space */}
-             <div className="relative grow overflow-hidden bg-black p-4 flex items-center justify-center">
+             <div className="relative grow overflow-hidden bg-black p-4 flex items-center justify-center min-h-[30vh]">
                 {/* Vignette Overlay for smooth edges */}
                 <div className="absolute inset-0 z-10 pointer-events-none shadow-[inset_0_0_100px_rgba(0,0,0,0.9)]"></div>
                 
@@ -186,7 +212,7 @@ const Trivia = () => {
                 <span className="inline-block bg-accent text-black font-bold px-3 py-1 rounded-full text-sm mb-3 shadow-lg shadow-accent/20">
                     Guess the Movie
                 </span>
-                <p className="text-base text-gray-200 italic leading-relaxed line-clamp-3 md:line-clamp-none max-w-3xl mx-auto">
+                <p className="text-base text-gray-200 italic leading-relaxed max-h-[150px] md:max-h-none overflow-y-auto max-w-3xl mx-auto">
                     "{currentMovie?.overview}"
                 </p>
              </div>
@@ -224,11 +250,11 @@ const Trivia = () => {
             </div>
 
             {/* Next Button */}
-            {answered && (
+            {!loading && answered && (
                 <div className="mt-6 flex justify-center animate-in fade-in zoom-in duration-300">
                     <button 
                         onClick={generateQuestion}
-                        className="bg-accent hover:bg-accent-hover text-black font-black text-base py-3 px-8 rounded-full flex items-center gap-2 shadow-lg hover:shadow-cyan-500/30 transition-all transform hover:scale-105"
+                        className="bg-accent hover:bg-accent-hover text-black font-black text-base py-3 px-8 rounded-full flex items-center gap-2 hover:shadow-lg hover:shadow-cyan-500/30 transition-all transform hover:scale-105 active:scale-95"
                     >
                         Next Round <ChevronRight size={20} />
                     </button>
