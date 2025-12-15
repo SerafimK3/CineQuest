@@ -38,13 +38,10 @@ const FilterBar = ({ onFilterChange }) => {
   };
 
   useEffect(() => {
-    const fetchData = async () => {
+    // 1. Fetch Static Data (Countries)
+    const fetchCountries = async () => {
       try {
-        const [genreList, countryList] = await Promise.all([
-            getGenres('movie'),
-            getCountries()
-        ]);
-        setGenres(genreList);
+        const countryList = await getCountries();
         
         // Filter out countries without significant film output and sort
         const validCountries = countryList
@@ -53,11 +50,29 @@ const FilterBar = ({ onFilterChange }) => {
             
         setCountries(validCountries);
       } catch (error) {
-        console.error("Failed to fetch filter data:", error);
+        console.error("Failed to fetch countries:", error);
       }
     };
-    fetchData();
+    fetchCountries();
   }, []);
+
+  // 2. Fetch Dynamic Data (Genres) based on Media Type
+  useEffect(() => {
+      const fetchGenres = async () => {
+          try {
+              // Default to 'movie' genres for 'all' or 'movie'
+              const type = mediaType === 'tv' ? 'tv' : 'movie';
+              const genreList = await getGenres(type);
+              setGenres(genreList);
+              
+              // Clear selections when type changes to avoid ID mismatch
+              setSelectedGenres([]);
+          } catch (error) {
+              console.error("Failed to fetch genres:", error);
+          }
+      };
+      fetchGenres();
+  }, [mediaType]);
 
   // Debounce filter updates
   useEffect(() => {
