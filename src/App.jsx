@@ -1,6 +1,7 @@
 import React, { Suspense, lazy } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { SpeedInsights } from "@vercel/speed-insights/react"
+import { Analytics } from "@vercel/analytics/react"
 import NavBar from './components/NavBar';
 
 // Lazy Load Pages for Performance
@@ -25,6 +26,7 @@ function App() {
     <div className="bg-background text-text-primary min-h-screen font-sans">
       <Router>
         <SpeedInsights />
+        <Analytics />
         <NavBar />
         <Suspense fallback={<PageLoader />}>
           <Routes>
