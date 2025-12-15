@@ -1,5 +1,6 @@
 import React, { Suspense, lazy } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { SpeedInsights } from "@vercel/speed-insights/react"
 import NavBar from './components/NavBar';
 
 // Lazy Load Pages for Performance
