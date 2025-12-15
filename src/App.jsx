@@ -23,6 +23,7 @@ function App() {
   return (
     <div className="bg-background text-text-primary min-h-screen font-sans">
       <Router>
+        <SpeedInsights />
         <NavBar />
         <Suspense fallback={<PageLoader />}>
           <Routes>
