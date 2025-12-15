@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { getGenres, getCountries } from '../services/tmdb';
 import { ChevronDown, ChevronUp, Globe, Clock, Calendar, Star } from 'lucide-react';
+import SearchableDropdown from './SearchableDropdown';
 
 // Countries with known active film industries to avoid empty results
 const RELEVANT_COUNTRY_CODES = [
@@ -115,24 +116,27 @@ const FilterBar = ({ onFilterChange }) => {
 
 
 
+  // Transform countries for dropdown
+  const countryOptions = countries.map(c => ({ value: c.iso_3166_1, label: c.english_name }));
+
   return (
-    <div className="bg-surface rounded-lg mb-6 shadow-lg border border-gray-800 text-sm">
+    <div className="bg-surface rounded-xl mb-6 shadow-xl border border-gray-800/50 text-sm overflow-hidden backdrop-blur-sm">
       
       {/* 0. Media Type Row */}
-      <div className="p-4 border-b border-gray-700">
-         <h4 className="text-gray-400 text-xs font-bold uppercase mb-3 flex items-center gap-2">
-            <Globe size={12} /> Media Type
+      <div className="p-4 border-b border-gray-800">
+         <h4 className="text-gray-400 text-[10px] font-black uppercase tracking-widest mb-3 flex items-center gap-2">
+            <Globe size={12} className="text-accent" /> Media Type
          </h4>
-         <div className="flex gap-2">
+         <div className="flex bg-gray-900 p-1 rounded-lg border border-gray-800">
              <button 
                 onClick={() => handleMediaTypeChange('movie')}
-                className={`flex-1 py-2 rounded-md font-bold transition-all border ${mediaType === 'movie' ? 'bg-accent text-black border-accent' : 'bg-gray-900 text-gray-400 border-gray-700 hover:border-gray-500'}`}
+                className={`flex-1 py-2 rounded-md font-bold text-xs transition-all duration-300 ${mediaType === 'movie' ? 'bg-accent text-black shadow-lg shadow-cyan-500/20' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}
              >
                  Movies
              </button>
              <button 
                 onClick={() => handleMediaTypeChange('tv')}
-                className={`flex-1 py-2 rounded-md font-bold transition-all border ${mediaType === 'tv' ? 'bg-accent text-black border-accent' : 'bg-gray-900 text-gray-400 border-gray-700 hover:border-gray-500'}`}
+                className={`flex-1 py-2 rounded-md font-bold text-xs transition-all duration-300 ${mediaType === 'tv' ? 'bg-purple-500 text-white shadow-lg shadow-purple-500/20' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}
              >
                  Series
              </button>
@@ -140,70 +144,69 @@ const FilterBar = ({ onFilterChange }) => {
       </div>
 
       {/* 1. Country & Genres Row */}
-      <div className="p-4 border-b border-gray-700">
-        <label className="text-gray-400 text-xs font-bold uppercase mb-2 flex items-center gap-2">
-            <Globe size={12} /> Origin Country
-        </label>
-        <select 
-            value={selectedCountry}
-            onChange={(e) => setSelectedCountry(e.target.value)}
-            className="w-full bg-gray-900 text-white px-3 py-2 rounded border border-gray-700 focus:outline-none focus:border-accent"
-        >
-            <option value="">All Countries</option>
-            {countries.map(c => (
-                <option key={c.iso_3166_1} value={c.iso_3166_1}>{c.english_name}</option>
-            ))}
-        </select>
-      </div>
+      <div className="p-4 border-b border-gray-800 space-y-4">
+        <div>
+            <label className="text-gray-400 text-[10px] font-black uppercase tracking-widest mb-2 flex items-center gap-2">
+                <Globe size={12} className="text-accent" /> Origin Country
+            </label>
+            <SearchableDropdown 
+                options={countryOptions}
+                value={selectedCountry}
+                onChange={setSelectedCountry}
+                placeholder="Select Country"
+                icon={<Globe size={14} />}
+            />
+        </div>
 
-      <div className="p-4 border-b border-gray-700">
-        <button 
-          onClick={() => setIsGenreOpen(!isGenreOpen)}
-          className="w-full flex justify-between items-center text-white font-semibold hover:text-accent transition"
-        >
-          <span className="flex items-center gap-2 text-xs uppercase text-gray-400 font-bold">
-             Filter by Genre {selectedGenres.length > 0 && <span className="bg-accent text-white px-1.5 rounded-full text-[10px]">{selectedGenres.length}</span>}
-          </span>
-          {isGenreOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-        </button>
-        
-        {isGenreOpen && (
-          <div className="grid grid-cols-2 gap-1.5 mt-3 animate-in slide-in-from-top-2">
-            {genres.map(genre => (
-              <div 
-                key={genre.id} 
-                onClick={() => handleGenreToggle(genre.id)}
-                className={`cursor-pointer px-2 py-1.5 rounded transition text-xs text-center select-none border ${
-                    selectedGenres.includes(genre.id) 
-                    ? 'text-accent border-accent bg-accent/10 font-bold' 
-                    : 'text-gray-400 border-gray-700 hover:border-gray-500 hover:text-gray-200'
-                }`}
-              >
-                {genre.name}
+        <div>
+            <button 
+              onClick={() => setIsGenreOpen(!isGenreOpen)}
+              className="w-full flex justify-between items-center text-white font-semibold hover:text-accent transition group"
+            >
+              <span className="flex items-center gap-2 text-[10px] uppercase text-gray-400 font-black tracking-widest group-hover:text-accent transition-colors">
+                 Filter by Genre {selectedGenres.length > 0 && <span className="bg-accent text-black px-1.5 py-0.5 rounded text-[9px]">{selectedGenres.length}</span>}
+              </span>
+              {isGenreOpen ? <ChevronUp size={14} className="text-accent" /> : <ChevronDown size={14} />}
+            </button>
+            
+            {isGenreOpen && (
+              <div className="flex flex-wrap gap-2 mt-3 animate-in fade-in slide-in-from-top-1 duration-200">
+                {genres.map(genre => (
+                  <button 
+                    key={genre.id} 
+                    onClick={() => handleGenreToggle(genre.id)}
+                    className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all border select-none active:scale-95 ${
+                        selectedGenres.includes(genre.id) 
+                        ? 'bg-accent text-black border-accent shadow-[0_0_10px_rgba(0,229,255,0.3)]' 
+                        : 'bg-gray-900 text-gray-400 border-gray-700 hover:border-gray-500 hover:text-white'
+                    }`}
+                  >
+                    {genre.name}
+                  </button>
+                ))}
               </div>
-            ))}
-          </div>
-        )}
+            )}
+        </div>
       </div>
 
       {/* 2. Compact Grid for Sliders */}
-      <div className="p-4 space-y-5">
+      <div className="p-4 space-y-6 bg-gray-900/30">
         
         {/* Release Year */}
         <div>
-            <div className="flex items-center gap-2 mb-2 text-gray-400 text-xs font-bold uppercase">
-                <Calendar size={12} /> Release Year
+            <div className="flex items-center gap-2 mb-2 text-gray-400 text-[10px] font-black uppercase tracking-widest">
+                <Calendar size={12} className="text-accent" /> Release Year
             </div>
             <div className="flex gap-2">
                 <input
                   type="number" placeholder="From"
                   value={yearFrom} onChange={(e) => setYearFrom(e.target.value)}
-                  className="w-1/2 bg-gray-900 px-2 py-1.5 rounded border border-gray-700 focus:border-accent text-xs"
+                  className="w-1/2 bg-gray-900 px-3 py-2 rounded border border-gray-700 focus:border-accent text-xs text-white focus:outline-none transition-colors"
                 />
                 <input
                   type="number" placeholder="To"
                   value={yearTo} onChange={(e) => setYearTo(e.target.value)}
-                  className="w-1/2 bg-gray-900 px-2 py-1.5 rounded border border-gray-700 focus:border-accent text-xs"
+                  className="w-1/2 bg-gray-900 px-3 py-2 rounded border border-gray-700 focus:border-accent text-xs text-white focus:outline-none transition-colors"
                 />
             </div>
         </div>
@@ -211,15 +214,15 @@ const FilterBar = ({ onFilterChange }) => {
         {/* Runtime (Dual Slider) */}
         <div>
             <div className="flex justify-between mb-2">
-                <span className="flex items-center gap-2 text-gray-400 text-xs font-bold uppercase"><Clock size={12} /> Runtime</span>
-                <span className="text-xs text-accent font-bold">{minRuntime}m - {maxRuntime}m</span>
+                <span className="flex items-center gap-2 text-gray-400 text-[10px] font-black uppercase tracking-widest"><Clock size={12} className="text-accent" /> Runtime</span>
+                <span className="text-[10px] text-accent font-bold bg-accent/10 px-2 py-0.5 rounded">{minRuntime}m - {maxRuntime}m</span>
             </div>
-            <div className="relative w-full h-8">
+            <div className="relative w-full h-8 flex items-center">
                 {/* Track Background */}
-                <div className="absolute top-1/2 left-0 w-full h-1 bg-gray-700 rounded-lg -translate-y-1/2"></div>
+                <div className="absolute w-full h-1.5 bg-gray-800 rounded-full"></div>
                 {/* Active Range Highlight */}
                 <div 
-                    className="absolute top-1/2 h-1 bg-accent rounded-lg -translate-y-1/2 pointer-events-none"
+                    className="absolute h-1.5 bg-accent rounded-full pointer-events-none"
                     style={{ 
                         left: `${(minRuntime / 300) * 100}%`, 
                         right: `${100 - (maxRuntime / 300) * 100}%` 
@@ -231,11 +234,11 @@ const FilterBar = ({ onFilterChange }) => {
                     type="range" min="0" max="300"
                     value={minRuntime} onChange={handleMinRuntimeChange}
                     className="absolute w-full h-full opacity-0 cursor-pointer pointer-events-none [&::-webkit-slider-thumb]:pointer-events-auto"
-                    style={{ zIndex: minRuntime > 290 ? 20 : 10 }} // z-index trick if overlaps
+                    style={{ zIndex: minRuntime > 290 ? 20 : 10 }} 
                 />
                  {/* Visible Thumb Min */}
                  <div 
-                    className="absolute top-1/2 w-4 h-4 bg-white border-2 border-accent rounded-full -translate-y-1/2 -ml-2 pointer-events-none shadow-md"
+                    className="absolute w-4 h-4 bg-black border-2 border-accent rounded-full -ml-2 pointer-events-none shadow-[0_0_10px_rgba(0,229,255,0.5)] transition-transform"
                     style={{ left: `${(minRuntime / 300) * 100}%` }}
                  ></div>
 
@@ -247,7 +250,7 @@ const FilterBar = ({ onFilterChange }) => {
                 />
                 {/* Visible Thumb Max */}
                 <div 
-                    className="absolute top-1/2 w-4 h-4 bg-white border-2 border-accent rounded-full -translate-y-1/2 -ml-2 pointer-events-none shadow-md"
+                    className="absolute w-4 h-4 bg-black border-2 border-accent rounded-full -ml-2 pointer-events-none shadow-[0_0_10px_rgba(0,229,255,0.5)] transition-transform"
                     style={{ left: `${(maxRuntime / 300) * 100}%` }}
                  ></div>
             </div>
@@ -255,14 +258,14 @@ const FilterBar = ({ onFilterChange }) => {
 
         {/* Rating */}
         <div>
-            <div className="flex justify-between mb-1">
-                <span className="flex items-center gap-2 text-gray-400 text-xs font-bold uppercase"><Star size={12} /> Min IDMb Score</span>
-                <span className="text-xs text-yellow-400 font-bold">{minRating}+</span>
+            <div className="flex justify-between mb-2">
+                <span className="flex items-center gap-2 text-gray-400 text-[10px] font-black uppercase tracking-widest"><Star size={12} className="text-yellow-400" /> Min Score</span>
+                <span className="text-[10px] text-yellow-400 font-bold bg-yellow-400/10 px-2 py-0.5 rounded border border-yellow-400/20">{minRating === 0 ? 'Any' : `${minRating}+`}</span>
             </div>
             <input
                 type="range" min="0" max="10" step="0.5"
                 value={minRating} onChange={(e) => setMinRating(Number(e.target.value))}
-                className="w-full h-1 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-yellow-400"
+                className="w-full h-1.5 bg-gray-800 rounded-lg appearance-none cursor-pointer accent-yellow-400 focus:outline-none"
             />
         </div>
       </div>
