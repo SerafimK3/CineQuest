@@ -165,33 +165,45 @@ const HigherLowerGame = () => {
                 </div>
             )}
 
-            {/* Main Stage Container - Handles the Slide (Desktop Only) */}
-            <div className={`flex flex-col md:flex-row w-full md:w-[200vw] h-full transition-transform duration-700 ease-out will-change-transform transform-gpu ${gameState === 'sliding' ? 'md:-translate-x-[100vw]' : 'md:translate-x-0'}`}>
+            {/* Main Stage Container - Handles the Slide */}
+            <div className={`flex flex-col md:flex-row w-full md:w-[150vw] h-[150%] md:h-full transition-transform duration-1000 ease-in-out will-change-transform transform-gpu ${gameState === 'sliding' ? 'translate-y-[-33.33%] md:translate-y-0 md:translate-x-[-33.33%]' : 'translate-y-0 md:translate-x-0'}`}>
                 
-                {/* 1. The "Current" Movie (Left/Top) */}
-                <div className="w-full md:w-[50vw] relative h-1/2 md:h-full border-b-4 md:border-b-0 md:border-r-4 border-black shrink-0">
-                    <div className="absolute inset-0 bg-black/60 z-10 flex flex-col items-center justify-center text-center p-4 md:p-8">
-                        <h2 className="text-2xl md:text-4xl lg:text-5xl font-black mb-2 md:mb-4 drop-shadow-lg leading-tight line-clamp-2">{currentMovie.title}</h2>
-                        <div className="text-xl md:text-3xl text-accent font-bold">
-                            <span className="text-gray-300 text-sm md:text-lg block mb-1 font-normal uppercase tracking-widest opacity-80">Total User Ratings</span>
-                            <span className="text-4xl md:text-6xl drop-shadow-[0_0_10px_rgba(0,229,255,0.5)]">{currentMovie.vote_count.toLocaleString()}</span>
-                        </div>
-                    </div>
-                    <img src={getImageUrl(currentMovie.poster_path, 'w1280')} decoding="async" className="w-full h-full object-cover opacity-50" alt={currentMovie.title} />
-                </div>
+                {movies.slice(0, 3).map((movie, index) => {
+                    const isCurrent = index === 0;
+                    const isNext = index === 1;
+                    const isUpcoming = index === 2;
 
-                {/* 2. The "Challenger" Movie (Right/Bottom) */}
-                <div className="w-full md:w-[50vw] relative h-1/2 md:h-full shrink-0">
-                     {/* Flip Container for Entrance Animation */}
-                    <div className={`w-full h-full relative ${gameState === 'idle' && score > 0 ? 'animate-in fade-in zoom-in duration-500' : ''}`}>
-                         <div className={`absolute inset-0 bg-black/60 z-10 flex flex-col items-center justify-center text-center p-4 md:p-8 transition-colors duration-500 ${result === 'correct' ? 'bg-green-900/80' : result === 'wrong' ? 'bg-red-900/80' : ''}`}>
+                    return (
+                        <div key={movie.id} className="w-full md:w-[50vw] relative h-[33.33%] md:h-full border-b-4 md:border-b-0 md:border-r-4 border-black shrink-0">
                             
-                            <h2 className="text-2xl md:text-4xl lg:text-5xl font-black mb-4 md:mb-8 drop-shadow-lg leading-tight line-clamp-2">{nextMovie.title}</h2>
-                            
-                            {/* Actions or Result */}
-                            <div className="min-h-[150px] md:min-h-[200px] flex flex-col justify-center w-full max-w-md">
-                                {gameState === 'idle' ? (
-                                    <>
+                            {/* Overlay Content */}
+                            <div className={`absolute inset-0 bg-black/60 z-10 flex flex-col items-center justify-center text-center p-4 md:p-8 transition-colors duration-500 ${isNext && result === 'correct' ? 'bg-green-900/80' : isNext && result === 'wrong' ? 'bg-red-900/80' : ''}`}>
+                                
+                                <h2 className="text-2xl md:text-4xl lg:text-5xl font-black mb-2 md:mb-4 drop-shadow-lg leading-tight line-clamp-2">{movie.title}</h2>
+                                
+                                {/* 1. Result State (Current Movie or Revealed Next) */}
+                                {(isCurrent || (isNext && result)) && (
+                                    <div className="text-xl md:text-3xl text-accent font-bold animate-in zoom-in duration-300">
+                                        <span className="text-gray-300 text-sm md:text-lg block mb-1 font-normal uppercase tracking-widest opacity-80">Total User Ratings</span>
+                                        <div className="text-4xl md:text-6xl drop-shadow-[0_0_10px_rgba(0,229,255,0.5)]">
+                                            {isNext && gameState === 'revealing' ? <CountUp end={movie.vote_count} /> : movie.vote_count.toLocaleString()}
+                                        </div>
+                                         {isNext && result === 'correct' && (
+                                            <div className="flex items-center justify-center gap-2 text-green-400 font-bold text-lg mt-2 animate-bounce">
+                                                <Check size={24} /> Correct!
+                                            </div>
+                                        )}
+                                        {isNext && result === 'wrong' && (
+                                            <div className="flex items-center justify-center gap-2 text-red-400 font-bold text-lg mt-2 animate-shake">
+                                                <XIcon size={24} /> Wrong!
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+
+                                {/* 2. Gameplay Actions (Next Movie Only + Idle) */}
+                                {isNext && !result && (
+                                    <div className="min-h-[150px] md:min-h-[200px] flex flex-col justify-center w-full max-w-md animate-in fade-in slide-in-from-bottom-4 duration-700">
                                         <span className="text-gray-300 text-sm md:text-lg block mb-2 md:mb-4 font-normal uppercase tracking-widest">has a</span>
                                         <div className="flex flex-col gap-3 md:gap-4 w-full px-8">
                                             <button 
@@ -210,42 +222,20 @@ const HigherLowerGame = () => {
                                                 LOWER
                                             </button>
                                         </div>
-                                    </>
-                                ) : (
-                                    <div className="animate-in zoom-in spin-in-3 duration-500">
-                                        <span className="text-gray-300 text-sm md:text-lg block mb-1 font-normal uppercase tracking-widest opacity-80">Total User Ratings</span>
-                                        <div className="text-4xl md:text-7xl font-black mb-4 drop-shadow-lg">
-                                            <CountUp end={nextMovie.vote_count} />
-                                        </div>
-                                        {result === 'correct' && (
-                                            <div className="flex items-center justify-center gap-2 text-green-400 font-bold text-xl md:text-2xl animate-bounce">
-                                                <Check size={32} /> Correct!
-                                            </div>
-                                        )}
-                                        {result === 'wrong' && (
-                                            <div className="flex items-center justify-center gap-2 text-red-400 font-bold text-xl md:text-2xl animate-shake">
-                                                <XIcon size={32} /> Wrong!
-                                            </div>
-                                        )}
+                                    </div>
+                                )}
+
+                                {/* 3. Upcoming (Waiting) */}
+                                {isUpcoming && (
+                                    <div className="text-gray-500 font-bold uppercase tracking-widest animate-pulse">
+                                        Up Next
                                     </div>
                                 )}
                             </div>
+                            <img src={getImageUrl(movie.poster_path, 'w1280')} decoding="async" className="w-full h-full object-cover opacity-50" alt={movie.title} />
                         </div>
-                        <img src={getImageUrl(nextMovie.poster_path, 'w1280')} decoding="async" className="w-full h-full object-cover opacity-50" alt={nextMovie.title} />
-                    </div>
-                </div>
-
-                {/* 3. The "Next" Movie (Hidden initially, slides in) */}
-                 {/* This is a trick: We don't need to render the 3rd movie yet. 
-                     The container is 200vw wide. 
-                     Left = 0-50vw (or 0-100vw mobile). Right = 50-100vw.
-                     When we slide -50vw, Left goes -50, Right goes to 0.. 
-                     Actually for full page slide it's simpler:
-                     Container width 100%. 
-                     We are animating the CONTENT.
-                     
-                     Let's stick to the 2-panel slide. The "Flip" happens when the Data updates after the slide.
-                 */}
+                    );
+                })}
             </div>
 
             {/* VS Badge - Absolute Center */}
