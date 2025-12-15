@@ -111,13 +111,13 @@ const HigherLowerGame = () => {
             // Wait for reveal (1.0s), then slide
             setTimeout(() => {
                 setGameState('sliding');
-                // Wait for slide (600ms), then reset
+                // Wait for slide (700ms), then reset
                 setTimeout(() => {
                     setMovies(prev => prev.slice(1));
                     setGameState('idle');
                     setResult(null);
                     // Refill handled by useEffect now
-                }, 600);
+                }, 700);
             }, 1000); 
         } else {
              // Wait for reveal then game over
@@ -166,7 +166,11 @@ const HigherLowerGame = () => {
             )}
 
             {/* Main Stage Container - Handles the Slide */}
-            <div className={`flex flex-col md:flex-row w-full md:w-[150vw] h-[150%] md:h-full transition-transform duration-1000 ease-in-out will-change-transform transform-gpu ${gameState === 'sliding' ? 'translate-y-[-33.33%] md:translate-y-0 md:translate-x-[-33.33%]' : 'translate-y-0 md:translate-x-0'}`}>
+            <div className={`flex flex-col md:flex-row w-full md:w-[150vw] h-[150%] md:h-full will-change-transform transform-gpu ${
+                gameState === 'sliding' 
+                    ? 'transition-transform duration-700 ease-in-out translate-y-[-33.33%] md:translate-y-0 md:translate-x-[-33.33%]' 
+                    : 'transition-none duration-0 translate-y-0 md:translate-x-0'
+            }`}>
                 
                 {movies.slice(0, 3).map((movie, index) => {
                     const isCurrent = index === 0;
