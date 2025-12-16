@@ -62,7 +62,7 @@ const VibeCoder = () => {
 
   const clearResult = () => {
       setResult(null);
-      setPrompt('');
+      // Keep prompt for refinement
   };
 
   const navigate = useNavigate();
@@ -131,28 +131,18 @@ const VibeCoder = () => {
               </div>
           )}
 
-          {/* RESULT SECTION */}
           {result && (
               <div className="w-full flex flex-col items-center animate-in zoom-in-95 duration-500">
-                  <div className="mb-4 text-sm text-gray-500 font-mono tracking-widest uppercase">
-                      Swipe Right to Match • Left to Pass
-                  </div>
-                  
                   <div className="scale-110 mb-8 touch-none">
                     <MovieCard 
                         movie={result} 
-                        enableSwipe={true}
-                        onSwipeRight={handleSwipeRight}
-                        onSwipeLeft={handleSwipeLeft}
+                        enableSwipe={false}
                     />
                   </div>
 
                   <div className="flex gap-4">
-                      <button onClick={handleAnalyze} className="px-6 py-2 bg-gray-800 rounded-full hover:bg-gray-700 flex items-center gap-2 font-bold transition-colors">
-                          <RefreshCw size={18} /> Retry
-                      </button>
-                      <button onClick={clearResult} className="px-6 py-2 bg-gray-800 rounded-full hover:bg-gray-700 flex items-center gap-2 font-bold transition-colors">
-                          <X size={18} /> New Search
+                      <button onClick={clearResult} className="px-8 py-3 bg-white text-black rounded-full hover:scale-105 active:scale-95 flex items-center gap-2 font-black uppercase tracking-widest transition-all shadow-[0_0_20px_rgba(255,255,255,0.3)]">
+                          <X size={20} /> New Search
                       </button>
                   </div>
               </div>
