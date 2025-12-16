@@ -1,6 +1,7 @@
 import { defineConfig, loadEnv } from 'vite'
 import react from '@vitejs/plugin-react'
 import { GoogleGenerativeAI } from '@google/generative-ai'
+import { VitePWA } from 'vite-plugin-pwa'
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => {
@@ -135,7 +136,31 @@ export default defineConfig(({ mode }) => {
             });
           });
         }
-      }
+      },
+      VitePWA({ 
+        registerType: 'autoUpdate',
+        includeAssets: ['app-icon.png'],
+        manifest: {
+          name: 'CineQuest: Vibe Coder',
+          short_name: 'CineQuest',
+          description: 'Spin the wheel, play trivia, and find your next favorite movie.',
+          theme_color: '#000000',
+          background_color: '#000000',
+          display: 'standalone',
+          icons: [
+            {
+              src: 'app-icon.png',
+              sizes: '192x192',
+              type: 'image/png'
+            },
+            {
+              src: 'app-icon.png',
+              sizes: '512x512',
+              type: 'image/png'
+            }
+          ]
+        }
+      })
     ],
   }
 })
