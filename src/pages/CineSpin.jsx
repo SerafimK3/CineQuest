@@ -119,10 +119,10 @@ const CineSpin = () => {
         {!result && (
             <>
                 <div className="text-center mb-10 animate-in fade-in zoom-in duration-700">
-                    <h1 className="text-4xl md:text-6xl font-black text-transparent bg-clip-text bg-linear-to-r from-purple-400 via-pink-500 to-red-500 tracking-tighter drop-shadow-[0_0_30px_rgba(236,72,153,0.5)] mb-4">
+                    <h1 className="text-4xl lg:text-6xl font-black text-transparent bg-clip-text bg-linear-to-r from-purple-400 via-pink-500 to-red-500 tracking-tighter drop-shadow-[0_0_30px_rgba(236,72,153,0.5)] mb-4">
                         What's the vibe?
                     </h1>
-                    <p className="text-gray-400 text-lg md:text-xl font-medium">Don't scroll. Just spin.</p>
+                    <p className="text-gray-400 text-lg lg:text-xl font-medium">Don't scroll. Just spin.</p>
                 </div>
 
                 <VibeSelector selections={selections} onSelect={handleVibeSelect} />
@@ -161,7 +161,7 @@ const CineSpin = () => {
             <div className="w-full flex flex-col items-center animate-in fade-in zoom-in duration-500">
                 
                 {/* Result Card (Massive) */}
-                <div className="relative w-full max-w-sm md:max-w-md aspect-2/3 rounded-3xl overflow-hidden shadow-[0_0_100px_rgba(0,0,0,0.8)] border-4 border-gray-900 group">
+                <div className="relative w-full max-w-sm lg:max-w-md aspect-2/3 rounded-3xl overflow-hidden shadow-[0_0_100px_rgba(0,0,0,0.8)] border-4 border-gray-900 group">
                      <img 
                         src={getImageUrl(result.poster_path, 'w780')} 
                         alt={result.title}
