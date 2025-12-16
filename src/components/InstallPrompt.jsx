@@ -7,8 +7,8 @@ const InstallPrompt = () => {
   const [isIOS, setIsIOS] = useState(false);
 
   useEffect(() => {
-    // Check if dismissed previously
-    const isDismissed = localStorage.getItem('install-prompt-dismissed');
+    // Check if dismissed in this session
+    const isDismissed = sessionStorage.getItem('install-prompt-dismissed');
     if (isDismissed) return;
 
     // Detect iOS
@@ -49,7 +49,7 @@ const InstallPrompt = () => {
 
   const handleDismiss = () => {
     setIsVisible(false);
-    localStorage.setItem('install-prompt-dismissed', 'true');
+    sessionStorage.setItem('install-prompt-dismissed', 'true');
   };
 
   if (!isVisible) return null;

@@ -241,7 +241,7 @@ const Trivia = () => {
                             disabled={answered}
                             className={`p-3 rounded-lg border-2 font-bold text-sm text-left transition-all transform active:scale-95 flex justify-between items-center ${buttonStyle}`}
                         >
-                            <span className="truncate pr-2">{option.title}</span>
+                            <span className="break-words pr-2 leading-snug">{option.title}</span>
                             {answered && isTheCorrectOne && <CheckCircle size={18} />}
                             {answered && isSelected && !isTheCorrectOne && <XCircle size={18} />}
                         </button>
