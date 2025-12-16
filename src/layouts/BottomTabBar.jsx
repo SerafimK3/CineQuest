@@ -16,7 +16,7 @@ const BottomTabBar = () => {
     const tabs = [
         { id: 'home', icon: Home, label: 'Spin', path: '/' },
         { id: 'discover', icon: Compass, label: 'Discover', path: '/discover' },
-        { id: 'vibe', icon: Sparkles, label: 'Vibe', path: '/chat', isHero: true },
+        { id: 'vibe', icon: Sparkles, label: 'Oracle', path: '/chat', isHero: true },
         { id: 'games', icon: Gamepad2, label: 'Games', path: '/games' },
         { id: 'history', icon: History, label: 'History', path: '/history' },
     ];

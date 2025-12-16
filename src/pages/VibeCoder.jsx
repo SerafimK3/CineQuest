@@ -95,10 +95,10 @@ const VibeCoder = () => {
                   <span className="bg-purple-500 text-black text-[10px] px-1.5 py-0.5 rounded font-black ml-2">BETA</span>
               </div>
               <h1 className="text-4xl md:text-5xl font-black mb-4">
-                  The Vibe Coder
+                  Movie Oracle
               </h1>
               <p className="text-gray-400 text-lg">
-                  "Scary 90s movie" or "Pick between Matrix and Inception"
+                  Explain the movie you want to watch.
               </p>
           </div>
 
