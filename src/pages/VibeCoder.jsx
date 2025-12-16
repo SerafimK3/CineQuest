@@ -1,17 +1,17 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Sparkles, BrainCircuit, ArrowRight, RefreshCw, X } from 'lucide-react';
+import { useRegion } from '../contexts/RegionContext';
 import MovieCard from '../components/MovieCard';
 
 const VibeCoder = () => {
-  const [prompt, setPrompt] = useState('');
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const { userRegion } = useRegion();
+  const [input, setInput] = useState('');
+  const [messages, setMessages] = useState([]);
   const [result, setResult] = useState(null);
   const [error, setError] = useState(null);
 
   const handleAnalyze = async () => {
-    if (!prompt.trim()) return;
-    
     setIsAnalyzing(true);
     setResult(null);
     setError(null);
@@ -23,7 +23,7 @@ const VibeCoder = () => {
         const response = await fetch('/api/analyze-vibe', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ prompt }),
+            body: JSON.stringify({ prompt, watch_region: userRegion }),
             signal: controller.signal
         });
 

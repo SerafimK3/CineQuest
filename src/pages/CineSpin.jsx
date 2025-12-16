@@ -4,10 +4,12 @@ import { discover, getDetails, getImageUrl } from '../services/tmdb';
 import MovieCard from '../components/MovieCard';
 import VibeSelector from '../components/VibeSelector';
 import { saveSpin } from '../utils/history';
+import { useRegion } from '../contexts/RegionContext';
 import { Sparkles, Dice5, ChevronLeft, Play, RefreshCw, AlertCircle } from 'lucide-react';
 
 const CineSpin = () => {
   const location = useLocation();
+  const { userRegion } = useRegion();
   const [result, setResult] = useState(null);
   const [resultDetails, setResultDetails] = useState(null);
   const [spinning, setSpinning] = useState(false);
@@ -64,11 +66,11 @@ const CineSpin = () => {
             // 2. Fetch
             // Try random page to ensure variety
             const randomPage = Math.floor(Math.random() * 10) + 1;
-            let results = await discover('movie', { ...apiFilters, page: randomPage });
+            let results = await discover('movie', { ...apiFilters, page: randomPage }, userRegion);
             
             // Fallback to page 1 if empty
             if (!results || results.length === 0) {
-                results = await discover('movie', { ...apiFilters, page: 1 });
+                results = await discover('movie', { ...apiFilters, page: 1 }, userRegion);
             }
 
             if (results && results.length > 0) {

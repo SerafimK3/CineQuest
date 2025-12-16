@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useLocation } from 'react-router-dom';
 import { getDetails, getImageUrl } from '../services/tmdb';
+import { useRegion } from '../contexts/RegionContext';
 import MovieCard from '../components/MovieCard';
 import { Star, Clock, Calendar, Play, ChevronDown, Check, Search as SearchIcon } from 'lucide-react';
 
@@ -167,9 +168,16 @@ const Details = () => {
   const location = useLocation();
   const mediaType = location.pathname.includes('/tv/') ? 'tv' : 'movie'; // Determine type from URL
 
+  const { userRegion } = useRegion();
   const [movie, setMovie] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [region, setRegion] = useState('US');
+  const [region, setRegion] = useState(userRegion || 'US');
+
+  useEffect(() => {
+    if (userRegion) {
+        setRegion(userRegion);
+    }
+  }, [userRegion]);
 
   useEffect(() => {
     const fetchDetails = async () => {

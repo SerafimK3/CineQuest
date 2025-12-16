@@ -5,6 +5,9 @@ import { Analytics } from "@vercel/analytics/react"
 import MobileLayout from './layouts/MobileLayout';
 import InstallPrompt from './components/InstallPrompt';
 
+import { RegionProvider } from './contexts/RegionContext';
+import RegionModal from './components/RegionModal';
+
 // Lazy Load Pages for Performance
 const Discover = lazy(() => import('./pages/Discover'));
 const VibeCoder = lazy(() => import('./pages/VibeCoder'));
@@ -25,11 +28,13 @@ const PageLoader = () => (
 function App() {
   return (
     <div className="bg-background text-text-primary min-h-screen font-sans">
-      <Router>
-        <SpeedInsights />
-        <Analytics />
-        <InstallPrompt />
-        <MobileLayout>
+      <RegionProvider>
+        <Router>
+          <SpeedInsights />
+          <Analytics />
+          <InstallPrompt />
+          <RegionModal />
+          <MobileLayout>
           <Suspense fallback={<PageLoader />}>
             <Routes>
               <Route path="/" element={<CineSpin />} />
@@ -49,7 +54,8 @@ function App() {
             </Routes>
           </Suspense>
         </MobileLayout>
-      </Router>
+        </Router>
+      </RegionProvider>
     </div>
   );
 }

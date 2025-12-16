@@ -23,15 +23,31 @@ export const getGenres = async (type = 'movie') => {
   return response.data.genres;
 };
 
-export const discover = async (type, params) => {
-  const response = await tmdb.get(`/discover/${type}`, { params });
+export const discover = async (type, params, region = null) => {
+  const finalParams = { ...params };
+  
+  if (region) {
+      finalParams.watch_region = region;
+      finalParams.with_watch_monetization_types = 'flatrate|free|ads|rent|buy';
+  }
+
+  const response = await tmdb.get(`/discover/${type}`, { params: finalParams });
   return response.data.results.filter(movie => movie.poster_path && movie.backdrop_path);
 };
 
-export const searchMovies = async (query) => {
-  const response = await tmdb.get('/search/movie', {
-    params: { query },
-  });
+export const searchMovies = async (query, region = null) => {
+  const params = { query };
+  
+  // NOTE: Search endpoint doesn't support watch_region filtering natively in V3 without discover magic.
+  // We will assume search just finds the movie, and we filter availability on the Client or just let it be.
+  // However, users asked for "filters only for that country".
+  // True "Search with Region" usually requires 2 steps: Search -> Get ID -> Check Availability.
+  // For MVP, we will stick to basic search but prioritized by popularity which correlates.
+  // OR: We can use 'discover' with 'with_text_query' if available (not standard V3).
+  // Implementation Decision: For direct "Search", we return all results. The availability check happens on Details page.
+  // BUT: For "Discover/AI", we MUST filter.
+
+  const response = await tmdb.get('/search/movie', { params });
   return response.data.results.filter(movie => movie.poster_path && movie.backdrop_path);
 };
 

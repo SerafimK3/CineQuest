@@ -15,9 +15,10 @@ export default async function handler(request) {
   const TIMEOUT_MS = 5500; // Increased to 5.5s to handle Free Tier latency
 
   try {
-    const { prompt } = await request.json();
+    const { prompt, region } = await request.json();
     const apiKey = process.env.GEMINI_API_KEY;
     const tmdbKey = process.env.VITE_TMDB_API_KEY;
+    const userRegion = region || 'US';
 
     if (!apiKey || !tmdbKey) {
       return new Response(JSON.stringify({ error: 'Missing API Keys' }), { status: 500 });
@@ -34,11 +35,13 @@ export default async function handler(request) {
 
     const systemInstruction = `
   You are a TMDB API Expert. Convert user text into precise JSON parameters.
+  
+  CURRENT USER REGION: ${userRegion} (Prioritize availability here).
 
   ### CHEAT SHEET (Use these exact IDs):
   - GENRES: Action=28, Adventure=12, Animation=16, Comedy=35, Crime=80, Documentary=99, Drama=18, Family=10751, Fantasy=14, History=36, Horror=27, Music=10402, Mystery=9648, Romance=10749, Sci-Fi=878, TV Movie=10770, Thriller=53, War=10752, Western=37.
   - PROVIDERS: Netflix=8, Disney+=337, Amazon Prime=119, Apple TV=2, HBO Max=384.
-  - REGIONS: Austria=AT, Germany=DE, USA=US, UK=GB. (Default to 'US' if provider is set but no region specified).
+  - REGIONS: Austria=AT, Germany=DE, USA=US, UK=GB. 
 
   ### RULES:
   1. **Strategy Selection:**
@@ -46,14 +49,14 @@ export default async function handler(request) {
      - If user asks for a VIBE/CATEGORY (e.g., "Scary movie", "Something from the 80s"), use strategy: "discover".
 
   2. **Filtering Logic (For 'discover'):**
-     - **Garbage Filter:** ALWAYS set "vote_count.gte": "300" (unless user asks for 'new' or 'upcoming').
-     - **Sorting:** Default "sort_by": "popularity.desc". If user says "best" or "top rated", use "vote_average.desc".
-     - **Dates:** If user says "80s", set "primary_release_date.gte": "1980-01-01" and "primary_release_date.lte": "1989-12-31".
-     - **Providers:** If a provider is mentioned (e.g. "Netflix"), you MUST set "with_watch_providers": "ID" AND "watch_region": "CountryCode".
+     - **Garbage Filter:** ALWAYS set "vote_count.gte": "300".
+     - **Sorting:** Default "sort_by": "popularity.desc".
+     - **Region Logic:** ALWAYS append "watch_region": "${userRegion}" (unless user explicitly asks for another).
+     - **Providers:** If "Netflix" mentioned, set "with_watch_providers": "8".
 
   ### OUTPUT FORMAT (JSON ONLY):
   Example 1 (Search): { "strategy": "search", "query": "The Dark Knight" }
-  Example 2 (Discover): { "strategy": "discover", "params": { "with_genres": "27,35", "watch_region": "AT", "with_watch_providers": "8", "vote_count.gte": "300", "sort_by": "popularity.desc" } }
+  Example 2 (Discover): { "strategy": "discover", "params": { "with_genres": "27,35", "watch_region": "${userRegion}", "with_watch_providers": "8", "vote_count.gte": "300", "sort_by": "popularity.desc" } }
 
   Input: "${prompt}"
 `;
