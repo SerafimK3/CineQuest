@@ -6,8 +6,8 @@ import MovieCard from '../components/MovieCard';
 
 const VibeCoder = () => {
   const { userRegion } = useRegion();
-  const [input, setInput] = useState('');
-  const [messages, setMessages] = useState([]);
+  const [prompt, setPrompt] = useState('');
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [result, setResult] = useState(null);
   const [error, setError] = useState(null);
 
@@ -91,7 +91,8 @@ const VibeCoder = () => {
           
           <div className="text-center mb-8">
               <div className="inline-flex items-center gap-2 bg-purple-900/30 border border-purple-500/50 px-4 py-1 rounded-full text-purple-300 text-sm font-bold mb-4 uppercase tracking-widest">
-                  <BrainCircuit size={16} /> True AI Powered
+                  <BrainCircuit size={16} /> True AI Powered 
+                  <span className="bg-purple-500 text-black text-[10px] px-1.5 py-0.5 rounded font-black ml-2">BETA</span>
               </div>
               <h1 className="text-4xl md:text-5xl font-black mb-4">
                   The Vibe Coder
