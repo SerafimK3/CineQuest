@@ -7,12 +7,8 @@ import NavBar from './components/NavBar';
 // Lazy Load Pages for Performance
 const Home = lazy(() => import('./pages/Home'));
 const Discover = lazy(() => import('./pages/Discover'));
-const Search = lazy(() => import('./pages/Search'));
-const Details = lazy(() => import('./pages/Details'));
-const CineSpin = lazy(() => import('./pages/CineSpin'));
-const GamesHub = lazy(() => import('./pages/games/GamesHub'));
-const TriviaGame = lazy(() => import('./pages/games/TriviaGame'));
-const HigherLowerGame = lazy(() => import('./pages/games/HigherLowerGame'));
+const VibeCoder = lazy(() => import('./pages/VibeCoder'));
+const SpinHistory = lazy(() => import('./pages/SpinHistory'));
 
 // Loading Fallback
 const PageLoader = () => (
@@ -30,10 +26,12 @@ function App() {
         <NavBar />
         <Suspense fallback={<PageLoader />}>
           <Routes>
-            <Route path="/" element={<Home />} />
+            <Route path="/" element={<CineSpin />} />
+            <Route path="/chat" element={<VibeCoder />} />
+            <Route path="/history" element={<SpinHistory />} />
+            
             <Route path="/discover" element={<Discover />} />
-            <Route path="/search" element={<Search />} />
-            <Route path="/cinespin" element={<CineSpin />} />
+            {/* Search Route Removed - Legacy */}
             
             {/* Games Routes */}
             <Route path="/games" element={<GamesHub />} />
