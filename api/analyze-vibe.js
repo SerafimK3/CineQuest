@@ -12,7 +12,7 @@ export default async function handler(request) {
     return new Response(JSON.stringify({ error: 'Method Not Allowed' }), { status: 405 });
   }
 
-  const TIMEOUT_MS = 3500; // Aggressive 3.5s Limit
+  const TIMEOUT_MS = 5500; // Increased to 5.5s to handle Free Tier latency
 
   try {
     const { prompt } = await request.json();
@@ -25,10 +25,10 @@ export default async function handler(request) {
 
     const genAI = new GoogleGenerativeAI(apiKey);
     const model = genAI.getGenerativeModel({ 
-        model: "gemini-2.0-flash", // Using 2.0 Flash as it is the functional Flash model in this env.
+        model: "gemini-2.0-flash", 
         generationConfig: { 
             response_mime_type: "application/json",
-            temperature: 0.1 // Precise, non-creative
+            temperature: 0.1 
         }
     });
 
