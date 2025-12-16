@@ -1,10 +1,13 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { discover, getDetails, getImageUrl } from '../services/tmdb';
 import MovieCard from '../components/MovieCard';
 import VibeSelector from '../components/VibeSelector';
+import { saveSpin } from '../utils/history';
 import { Sparkles, Dice5, ChevronLeft, Play, RefreshCw, AlertCircle } from 'lucide-react';
 
 const CineSpin = () => {
+  const location = useLocation();
   const [result, setResult] = useState(null);
   const [resultDetails, setResultDetails] = useState(null);
   const [spinning, setSpinning] = useState(false);
@@ -21,25 +24,38 @@ const CineSpin = () => {
       setSelections(prev => ({ ...prev, [category]: option }));
   };
 
-  const startSpin = async () => {
+  // Check for auto-spin from VibeCoder on mount
+  useEffect(() => {
+      // If we have injected filters and we haven't spun yet
+      if (location.state?.autoSpin && location.state?.injectedFilters && !spinning && !result) {
+          startSpin(location.state.injectedFilters);
+      }
+  }, [location.state]);
+
+  const startSpin = async (customFilters = null) => {
     if (spinning) return;
     setSpinning(true);
     setResult(null);
     setError(null);
 
     try {
-        // 1. Construct Filters from Vibes
+        // 1. Construct Filters
         let apiFilters = {
             include_adult: false,
             include_video: false,
-            sort_by: 'popularity.desc', // Bias towards good movies
-            'vote_count.gte': 100, // Ensure decent data
+            sort_by: 'popularity.desc', 
+            'vote_count.gte': 100, 
         };
 
-        // Merge selection values
-        if (selections.duration) Object.assign(apiFilters, selections.duration.value);
-        if (selections.era) Object.assign(apiFilters, selections.era.value);
-        if (selections.mood) Object.assign(apiFilters, selections.mood.value);
+        if (customFilters && Object.keys(customFilters).length > 0) {
+            // Use injected filters from AI
+            Object.assign(apiFilters, customFilters);
+        } else {
+            // Use manual selections
+            if (selections.duration) Object.assign(apiFilters, selections.duration.value);
+            if (selections.era) Object.assign(apiFilters, selections.era.value);
+            if (selections.mood) Object.assign(apiFilters, selections.mood.value);
+        }
 
         // 2. Fetch
         // Try random page to ensure variety
@@ -61,6 +77,10 @@ const CineSpin = () => {
              const details = await getDetails('movie', winner.id);
              setResult(winner);
              setResultDetails(details);
+             
+             // Save to History
+             saveSpin(winner);
+
         } else {
             throw new Error("No movies found for this vibe.");
         }
@@ -110,7 +130,7 @@ const CineSpin = () => {
 
                 <div className="mt-12 mb-20">
                     <button
-                        onClick={startSpin}
+                        onClick={() => startSpin(null)} // Call without arguments for manual
                         disabled={spinning}
                         className={`group relative px-12 py-6 rounded-full bg-linear-to-r from-accent to-purple-600 text-black font-black text-2xl tracking-widest uppercase transition-all duration-300 transform hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed shadow-[0_0_50px_rgba(0,229,255,0.4)] hover:shadow-[0_0_80px_rgba(236,72,153,0.6)] ${spinning ? 'animate-pulse' : ''}`}
                     >
@@ -151,7 +171,7 @@ const CineSpin = () => {
                          <div className="flex flex-col gap-3">
                              {/* Watch Now */}
                              <a 
-                                href={`https://www.themoviedb.org/movie/${result.id}/watch`} // Simplified JustWatch link via TMDB
+                                href={`https://www.themoviedb.org/movie/${result.id}/watch`} 
                                 target="_blank"
                                 rel="noreferrer" 
                                 className="w-full py-4 bg-white text-black font-black uppercase tracking-widest rounded-xl hover:bg-accent transition-colors flex items-center justify-center gap-2"
@@ -162,7 +182,7 @@ const CineSpin = () => {
                              {/* Spin Again */}
                              <div className="flex gap-3">
                                  <button 
-                                     onClick={startSpin}
+                                     onClick={() => startSpin(null)}
                                      className="flex-1 py-4 bg-gray-800 text-white font-bold uppercase tracking-widest rounded-xl hover:bg-gray-700 transition-colors flex items-center justify-center gap-2"
                                  >
                                      <RefreshCw size={18} /> Spin Again

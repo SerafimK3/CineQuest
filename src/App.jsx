@@ -5,7 +5,6 @@ import { Analytics } from "@vercel/analytics/react"
 import NavBar from './components/NavBar';
 
 // Lazy Load Pages for Performance
-const Home = lazy(() => import('./pages/Home'));
 const Discover = lazy(() => import('./pages/Discover'));
 const VibeCoder = lazy(() => import('./pages/VibeCoder'));
 const SpinHistory = lazy(() => import('./pages/SpinHistory'));
