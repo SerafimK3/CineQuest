@@ -15,26 +15,48 @@ const VibeCoder = () => {
     setResult(null);
     setError(null);
     
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 8000); // 8s Timeout
+
     try {
         const response = await fetch('/api/analyze-vibe', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ prompt })
+            body: JSON.stringify({ prompt }),
+            signal: controller.signal
         });
 
+        clearTimeout(timeoutId);
         const data = await response.json();
 
         if (!response.ok) throw new Error(data.error || "AI request failed");
-        
-        // Success! We got a movie object directly.
         setResult(data.movie);
 
     } catch (err) {
         console.error("Vibe coding failed:", err);
-        setError("The AI brain is foggy (Rate Limit or Error). Try again in a moment!");
+        clearTimeout(timeoutId);
+        
+        // Fallback Strategy: If AI fails (Rate limit/Timeout), just show a Trending Movie
+        setError("AI is busy (Rate Limit). Showing a Trending Movie instead!");
+        await fetchTrendingFallback();
     } finally {
         setIsAnalyzing(false);
     }
+  };
+
+  const fetchTrendingFallback = async () => {
+      try {
+          // Direct TMDB Fallback
+          const API_KEY = import.meta.env.VITE_TMDB_API_KEY; 
+          const response = await fetch(`https://api.themoviedb.org/3/trending/movie/day?api_key=${API_KEY}`);
+          const data = await response.json();
+          if (data.results?.length) {
+              const random = data.results[Math.floor(Math.random() * 5)];
+              setResult(random);
+          }
+      } catch (e) {
+          setError("Even the fallback failed. Check internet.");
+      }
   };
 
   const clearResult = () => {

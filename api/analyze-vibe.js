@@ -37,6 +37,12 @@ export default async function handler(request) {
       2. Decide the Strategy: "search" (for specific titles/franchises) or "discover" (for vibes/genres).
       3. Output valid JSON to execute the strategy.
 
+      ### CRITICAL: HANDLING "PICK ONE"
+      - If the user asks to "Pick one of the [Franchise] movies", YOU must choose a specific popular installment.
+      - DO NOT return the franchise name. Return the SPECIFIC TITLE.
+      - Example: "Pick one of the Avengers" -> { "strategy": "search", "query": "The Avengers" } OR { "strategy": "search", "query": "Avengers: Infinity War" }.
+      - Example: "Pick a Harry Potter movie" -> { "strategy": "search", "query": "Harry Potter and the Prisoner of Azkaban" }.
+
       ### MAPPINGS (Use these IDs)
       - Genres: Action=28, Adventure=12, Animation=16, Comedy=35, Crime=80, Documentary=99, Drama=18, Family=10751, Fantasy=14, History=36, Horror=27, Music=10402, Mystery=9648, Romance=10749, Sci-Fi=878, TV Movie=10770, Thriller=53, War=10752, Western=37.
       - Providers: Netflix=8, Disney+=337, Amazon Prime=119, HBO Max=384, Hulu=15, Apple TV=350.
@@ -63,11 +69,6 @@ export default async function handler(request) {
           "sort_by": "popularity.desc"
         }
       }
-
-      ### AMBIGUITY HANDLING
-      - Input: "Scary Movie" -> imply the franchise -> { "strategy": "search", "query": "Scary Movie" }
-      - Input: "A scary movie" -> imply genre -> { "strategy": "discover", "params": { "with_genres": "27" } }
-      - Input: "Choose between X and Y" -> { "strategy": "search", "query": "X" } (Pick one randomly)
 
       User Input: "${prompt}"
     `;
@@ -106,19 +107,26 @@ export default async function handler(request) {
 
     // 5. Select Winning Movie
     if (!tmdbData.results || tmdbData.results.length === 0) {
-         // Fallback to trending if AI failed to find anything
+         // Fallback to trending
          const fallbackUrl = `${baseUrl}/trending/movie/week?api_key=${tmdbKey}`;
          const fallbackRes = await fetch(fallbackUrl);
          tmdbData = await fallbackRes.json();
     }
 
-    // Pick a random one from top 5 to keep it fresh, or first one if specific search
-    const candidates = tmdbData.results.slice(0, 5);
-    const winner = candidates[Math.floor(Math.random() * candidates.length)];
+    let winner;
+    if (aiResponse.strategy === 'search') {
+        // For specific searches, the Top Result is usually the one requested.
+        // If the AI said "Avengers: Infinity War", result[0] will be that movie.
+        winner = tmdbData.results[0];
+    } else {
+        // For vibes (Discover), keep it random/spicy from the top 5.
+        const candidates = tmdbData.results.slice(0, 5);
+        winner = candidates[Math.floor(Math.random() * candidates.length)];
+    }
 
     return new Response(JSON.stringify({ 
         movie: winner, 
-        aiContext: aiResponse // Return debug info
+        aiContext: aiResponse 
     }), {
       status: 200,
       headers: { 'Content-Type': 'application/json' }

@@ -42,9 +42,12 @@ export default defineConfig(({ mode }) => {
                   2. Decide Strategy: "search" (specific title/franchise) OR "discover" (vibe/genre).
                   3. Output JSON.
 
+                  ### CRITICAL: HANDLING "PICK ONE"
+                  - If the user asks to "Pick one of the [Franchise] movies", YOU must choose a specific popular installment.
+                  - Return the SPECIFIC TITLE (e.g., "Avengers: Infinity War").
+
                   ### MAPPINGS
-                  Genres: Action=28, Horror=27, Comedy=35, Drama=18, Sci-Fi=878, Romance=10749, Family=10751.
-                  Providers: Netflix=8, Disney+=337, Amazon=119.
+                  Genres: Action=28, Horror=27, Comedy=35, Drama=18.
                   Regions: US=US, Austria=AT, Germany=DE.
 
                   ### OUTPUT JSON
@@ -85,8 +88,15 @@ export default defineConfig(({ mode }) => {
                     tmdbData = await fallback.json();
                 }
 
-                const candidates = tmdbData.results.slice(0, 5);
-                const winner = candidates[Math.floor(Math.random() * candidates.length)];
+                let winner;
+                if (aiResponse.strategy === 'search') {
+                    // Specific Search: Pick the TOP result.
+                    winner = tmdbData.results[0];
+                } else {
+                    // Discover: Pick random from top 5.
+                    const candidates = tmdbData.results.slice(0, 5);
+                    winner = candidates[Math.floor(Math.random() * candidates.length)];
+                }
 
                 res.setHeader('Content-Type', 'application/json');
                 res.end(JSON.stringify({ movie: winner, aiContext: aiResponse }));
