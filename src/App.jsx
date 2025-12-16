@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { SpeedInsights } from "@vercel/speed-insights/react"
 import { Analytics } from "@vercel/analytics/react"
 import MobileLayout from './layouts/MobileLayout';
+import InstallPrompt from './components/InstallPrompt';
 
 // Lazy Load Pages for Performance
 const Discover = lazy(() => import('./pages/Discover'));
@@ -27,6 +28,7 @@ function App() {
       <Router>
         <SpeedInsights />
         <Analytics />
+        <InstallPrompt />
         <MobileLayout>
           <Suspense fallback={<PageLoader />}>
             <Routes>
