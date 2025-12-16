@@ -8,6 +8,11 @@ import NavBar from './components/NavBar';
 const Discover = lazy(() => import('./pages/Discover'));
 const VibeCoder = lazy(() => import('./pages/VibeCoder'));
 const SpinHistory = lazy(() => import('./pages/SpinHistory'));
+const CineSpin = lazy(() => import('./pages/CineSpin'));
+const Details = lazy(() => import('./pages/Details'));
+const GamesHub = lazy(() => import('./pages/games/GamesHub'));
+const TriviaGame = lazy(() => import('./pages/games/TriviaGame'));
+const HigherLowerGame = lazy(() => import('./pages/games/HigherLowerGame'));
 
 // Loading Fallback
 const PageLoader = () => (
