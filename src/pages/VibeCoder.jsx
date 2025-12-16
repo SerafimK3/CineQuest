@@ -7,59 +7,41 @@ const VibeCoder = () => {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const navigate = useNavigate();
 
-  // "Tiny LLM" - Smart Regex Parser
-  const parseVibe = (text) => {
-      const lower = text.toLowerCase();
-      const filters = {};
-
-      // 1. Genres
-      if (lower.match(/scary|horror|spooky|creepy/)) filters.with_genres = '27';
-      if (lower.match(/funny|comedy|laugh|sitcom/)) filters.with_genres = '35';
-      if (lower.match(/action|fight|explosion|intense/)) filters.with_genres = '28';
-      if (lower.match(/drama|sad|emotional|tearjerker/)) filters.with_genres = '18';
-      if (lower.match(/love|romance|romantic|date/)) filters.with_genres = '10749';
-      if (lower.match(/family|kids|children/)) filters.with_genres = '10751';
-      if (lower.match(/scifi|sci-fi|space|future/)) filters.with_genres = '878';
-
-      // 2. Decades
-      if (lower.match(/80s|1980/)) {
-          filters['primary_release_date.gte'] = '1980-01-01';
-          filters['primary_release_date.lte'] = '1989-12-31';
-      }
-      if (lower.match(/90s|1990/)) {
-          filters['primary_release_date.gte'] = '1990-01-01';
-          filters['primary_release_date.lte'] = '1999-12-31';
-      }
-      if (lower.match(/2000s|00s/)) {
-          filters['primary_release_date.gte'] = '2000-01-01';
-          filters['primary_release_date.lte'] = '2009-12-31';
-      }
-      
-      // 3. Keywords (Mocking "New York", "Paris" -> could use real IDs if we had a mapping, for now just simple Logic)
-      // This is a "Prototype" AI, so we keep it simple.
-
-      return filters;
-  };
-
   const handleAnalyze = async () => {
     if (!prompt.trim()) return;
     
     setIsAnalyzing(true);
     
-    // Fake "AI Processing" Delay
-    await new Promise(r => setTimeout(r, 1500));
-    
-    const filters = parseVibe(prompt);
-    
-    // Navigate to Spinner with mapped filters
-    navigate('/', { 
-        state: { 
-            autoSpin: true, 
-            injectedFilters: filters,
-            vibeDescription: prompt 
-        } 
-    });
+    try {
+        const response = await fetch('/api/analyze-vibe', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ prompt })
+        });
+
+        if (!response.ok) throw new Error("AI request failed");
+        
+        const filters = await response.json();
+        
+        // Navigate to Spinner with AI-generated filters
+        navigate('/', { 
+            state: { 
+                autoSpin: true, 
+                injectedFilters: filters,
+                vibeDescription: prompt 
+            } 
+        });
+
+    } catch (error) {
+        console.error("Vibe coding failed:", error);
+        // Fallback or Alert? For now, we just stop loading so user can try again
+        // Maybe add a toast in future
+        alert("Sorry, the AI brain is foggy (API Error). Try again!");
+    } finally {
+        setIsAnalyzing(false);
+    }
   };
+
 
   return (
     <div className="min-h-[calc(100vh-64px)] bg-black text-white p-6 flex flex-col items-center justify-center relative overflow-hidden">
