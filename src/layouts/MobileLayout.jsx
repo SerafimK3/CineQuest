@@ -1,7 +1,7 @@
 
 import React from 'react';
 import BottomTabBar from './BottomTabBar';
-import Navbar from '../components/Navbar';
+import Navbar from '../components/NavBar';
 
 const MobileLayout = ({ children }) => {
     return (
