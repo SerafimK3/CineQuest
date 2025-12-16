@@ -1,27 +1,72 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Star } from 'lucide-react';
 import { getImageUrl } from '../services/tmdb';
+import { useSpring, animated } from '@react-spring/web';
+import { useDrag } from '@use-gesture/react';
 
-const MovieCard = ({ movie, type }) => {
+const MovieCard = ({ movie, type, enableSwipe = false, onSwipeLeft, onSwipeRight }) => {
+  const [gone, setGone] = useState(false); // Track if card has been swiped away
+
+  const [{ x, rot }, api] = useSpring(() => ({ 
+      x: 0, 
+      rot: 0, 
+      config: { friction: 50, tension: 200 } 
+  }));
+
+  const bind = useDrag(({ down, movement: [mx], velocity: [vx], direction: [xDir] }) => {
+      if (!enableSwipe || gone) return;
+
+      const trigger = vx > 0.2; // Velocity threshold
+      const dir = xDir < 0 ? -1 : 1; // Direction
+
+      if (!down && trigger && Math.abs(mx) > 50) {
+          // Swipe Triggered
+          setGone(true);
+          const isRight = dir === 1;
+          const endX = (200 + window.innerWidth) * dir;
+          
+          api.start({ x: endX, rot: dir * 10, config: { friction: 50, tension: 200 } });
+
+          // Callbacks
+          if (isRight && onSwipeRight) onSwipeRight();
+          if (!isRight && onSwipeLeft) onSwipeLeft();
+      } else {
+          // Dragging or Snap Back
+          api.start({ 
+              x: down ? mx : 0, 
+              rot: down ? mx / 20 : 0, 
+              immediate: down 
+          });
+      }
+  });
+
   if (!movie) return null;
-  
+
   const title = movie.title || movie.name;
   const date = movie.release_date || movie.first_air_date;
   const year = date ? new Date(date).getFullYear() : 'N/A';
-  
-  // Determine media type: explicit prop > object property > default 'movie'
   const mediaType = type || movie.media_type || 'movie';
 
+  // Apply gestures only if enabled
+  const AnimatedLink = enableSwipe ? animated(Link) : Link;
+  const gestureProps = enableSwipe ? bind() : {};
+  const styleProps = enableSwipe ? { x, rotate: rot, touchAction: 'none' } : {};
+
   return (
-    <Link to={`/${mediaType}/${movie.id}`} className="block group">
-      <div className="relative overflow-hidden rounded-lg shadow-lg bg-surface transition transform group-hover:scale-105">
-        <div className="aspect-[2/3] w-full">
+    <AnimatedLink 
+        to={`/${mediaType}/${movie.id}`} 
+        className={`block group ${gone ? 'pointer-events-none' : ''}`}
+        style={styleProps}
+        {...gestureProps}
+    >
+      <div className={`relative overflow-hidden rounded-lg shadow-lg bg-surface transition ${!enableSwipe ? 'transform group-hover:scale-105' : ''}`}>
+        <div className="aspect-[2/3] w-full relative">
           {movie.poster_path ? (
             <img 
               src={getImageUrl(movie.poster_path, 'w500')} 
               alt={title} 
-              className="w-full h-full object-cover"
+              className="w-full h-full object-cover pointer-events-none select-none" // prevent built-in drag
               loading="lazy"
             />
           ) : (
@@ -29,6 +74,19 @@ const MovieCard = ({ movie, type }) => {
               No Image
             </div>
           )}
+          
+          {/* Overlay Hints for Swipe */}
+          {enableSwipe && (
+              <>
+                <div className="absolute top-4 left-4 border-2 border-green-500 text-green-500 px-2 py-1 rounded font-black text-2xl uppercase opacity-0 -rotate-12 transition-opacity" style={{ opacity: x.to(val => (val > 50 ? val / 200 : 0)) }}>
+                    LIKE
+                </div>
+                <div className="absolute top-4 right-4 border-2 border-red-500 text-red-500 px-2 py-1 rounded font-black text-2xl uppercase opacity-0 rotate-12 transition-opacity" style={{ opacity: x.to(val => (val < -50 ? Math.abs(val) / 200 : 0)) }}>
+                    NOPE
+                </div>
+              </>
+          )}
+
         </div>
         <div className="absolute top-2 right-2 bg-black/70 px-2 py-1 rounded-md flex items-center space-x-1 text-yellow-400 text-sm font-bold">
           <Star size={14} fill="currentColor" />
@@ -39,7 +97,7 @@ const MovieCard = ({ movie, type }) => {
           <p className="text-text-secondary text-sm">{year}</p>
         </div>
       </div>
-    </Link>
+    </AnimatedLink>
   );
 };
 

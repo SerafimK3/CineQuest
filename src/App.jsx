@@ -2,7 +2,7 @@ import React, { Suspense, lazy } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { SpeedInsights } from "@vercel/speed-insights/react"
 import { Analytics } from "@vercel/analytics/react"
-import NavBar from './components/NavBar';
+import MobileLayout from './layouts/MobileLayout';
 
 // Lazy Load Pages for Performance
 const Discover = lazy(() => import('./pages/Discover'));
@@ -27,25 +27,26 @@ function App() {
       <Router>
         <SpeedInsights />
         <Analytics />
-        <NavBar />
-        <Suspense fallback={<PageLoader />}>
-          <Routes>
-            <Route path="/" element={<CineSpin />} />
-            <Route path="/chat" element={<VibeCoder />} />
-            <Route path="/history" element={<SpinHistory />} />
-            
-            <Route path="/discover" element={<Discover />} />
-            {/* Search Route Removed - Legacy */}
-            
-            {/* Games Routes */}
-            <Route path="/games" element={<GamesHub />} />
-            <Route path="/games/trivia" element={<TriviaGame />} />
-            <Route path="/games/higher-lower" element={<HigherLowerGame />} />
-            
-            <Route path="/movie/:id" element={<Details />} />
-            <Route path="/tv/:id" element={<Details />} />
-          </Routes>
-        </Suspense>
+        <MobileLayout>
+          <Suspense fallback={<PageLoader />}>
+            <Routes>
+              <Route path="/" element={<CineSpin />} />
+              <Route path="/chat" element={<VibeCoder />} />
+              <Route path="/history" element={<SpinHistory />} />
+              
+              <Route path="/discover" element={<Discover />} />
+              {/* Search Route Removed - Legacy */}
+              
+              {/* Games Routes */}
+              <Route path="/games" element={<GamesHub />} />
+              <Route path="/games/trivia" element={<TriviaGame />} />
+              <Route path="/games/higher-lower" element={<HigherLowerGame />} />
+              
+              <Route path="/movie/:id" element={<Details />} />
+              <Route path="/tv/:id" element={<Details />} />
+            </Routes>
+          </Suspense>
+        </MobileLayout>
       </Router>
     </div>
   );

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Sparkles, BrainCircuit, ArrowRight, RefreshCw, X } from 'lucide-react';
 import MovieCard from '../components/MovieCard';
 
@@ -64,6 +65,20 @@ const VibeCoder = () => {
       setPrompt('');
   };
 
+  const navigate = useNavigate();
+
+  const handleSwipeRight = () => {
+    // Navigate to details after a short delay for animation
+    setTimeout(() => {
+        navigate(`/movie/${result.id}`);
+    }, 300);
+  };
+
+  const handleSwipeLeft = () => {
+    // Trigger re-spin
+    handleAnalyze();
+  };
+
   return (
     <div className="min-h-[calc(100vh-64px)] bg-black text-white p-6 flex flex-col items-center justify-center relative overflow-hidden">
         
@@ -118,17 +133,26 @@ const VibeCoder = () => {
           {/* RESULT SECTION */}
           {result && (
               <div className="w-full flex flex-col items-center animate-in zoom-in-95 duration-500">
-                  <div className="mb-6 flex gap-4">
+                  <div className="mb-4 text-sm text-gray-500 font-mono tracking-widest uppercase">
+                      Swipe Right to Match • Left to Pass
+                  </div>
+                  
+                  <div className="scale-110 mb-8 touch-none">
+                    <MovieCard 
+                        movie={result} 
+                        enableSwipe={true}
+                        onSwipeRight={handleSwipeRight}
+                        onSwipeLeft={handleSwipeLeft}
+                    />
+                  </div>
+
+                  <div className="flex gap-4">
                       <button onClick={handleAnalyze} className="px-6 py-2 bg-gray-800 rounded-full hover:bg-gray-700 flex items-center gap-2 font-bold transition-colors">
-                          <RefreshCw size={18} /> Retry Vibe
+                          <RefreshCw size={18} /> Retry
                       </button>
                       <button onClick={clearResult} className="px-6 py-2 bg-gray-800 rounded-full hover:bg-gray-700 flex items-center gap-2 font-bold transition-colors">
                           <X size={18} /> New Search
                       </button>
-                  </div>
-
-                  <div className="scale-110">
-                    <MovieCard movie={result} />
                   </div>
               </div>
           )}
@@ -137,5 +161,6 @@ const VibeCoder = () => {
     </div>
   );
 };
+
 
 export default VibeCoder;
