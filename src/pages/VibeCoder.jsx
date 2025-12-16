@@ -16,7 +16,7 @@ const VibeCoder = () => {
     setError(null);
     
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 8000); // 8s Timeout
+    const timeoutId = setTimeout(() => controller.abort(), 5000); // 5s Timeout (Backend has 3.5s)
 
     try {
         const response = await fetch('/api/analyze-vibe', {

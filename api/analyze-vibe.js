@@ -3,7 +3,7 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 import axios from 'axios';
 
 export const config = {
-  runtime: 'edge', // Or 'nodejs' if axios needs it, but standard fetch is better in edge. modifying to use fetch for edge compatibility or axios if node.
+  runtime: 'edge', 
 };
 
 // Vercel Serverless Function
@@ -11,6 +11,8 @@ export default async function handler(request) {
   if (request.method !== 'POST') {
     return new Response(JSON.stringify({ error: 'Method Not Allowed' }), { status: 405 });
   }
+
+  const TIMEOUT_MS = 3500; // Aggressive 3.5s Limit
 
   try {
     const { prompt } = await request.json();
@@ -21,119 +23,101 @@ export default async function handler(request) {
       return new Response(JSON.stringify({ error: 'Missing API Keys' }), { status: 500 });
     }
 
-    // 1. Initialize Gemini
     const genAI = new GoogleGenerativeAI(apiKey);
     const model = genAI.getGenerativeModel({ 
-        model: "gemini-2.0-flash", // User requested 1.5-flash but we validated 2.0 is available only? Reverting to requested 1.5-flash if 2.0 fails, but we proved 2.0 works. Sticking to 2.0-flash as verified.
-        generationConfig: { response_mime_type: "application/json" }
+        model: "gemini-2.0-flash", // Using 2.0 Flash as it is the functional Flash model in this env.
+        generationConfig: { 
+            response_mime_type: "application/json",
+            temperature: 0.1 // Precise, non-creative
+        }
     });
 
-    // 2. System Instruction (The Brain)
     const systemInstruction = `
-      You are a movie expert and API translator. Your goal is to find the perfect movie for the user by translating their natural language request into The Movie Database (TMDB) API parameters.
-
-      ### YOUR JOB
-      1. Analyze the input.
-      2. Decide the Strategy: "search" (for specific titles/franchises) or "discover" (for vibes/genres).
-      3. Output valid JSON to execute the strategy.
-
-      ### CRITICAL: HANDLING "PICK ONE"
-      - If the user asks to "Pick one of the [Franchise] movies", YOU must choose a specific popular installment.
-      - DO NOT return the franchise name. Return the SPECIFIC TITLE.
-      - Example: "Pick one of the Avengers" -> { "strategy": "search", "query": "The Avengers" } OR { "strategy": "search", "query": "Avengers: Infinity War" }.
-      - Example: "Pick a Harry Potter movie" -> { "strategy": "search", "query": "Harry Potter and the Prisoner of Azkaban" }.
-
-      ### MAPPINGS (Use these IDs)
-      - Genres: Action=28, Adventure=12, Animation=16, Comedy=35, Crime=80, Documentary=99, Drama=18, Family=10751, Fantasy=14, History=36, Horror=27, Music=10402, Mystery=9648, Romance=10749, Sci-Fi=878, TV Movie=10770, Thriller=53, War=10752, Western=37.
-      - Providers: Netflix=8, Disney+=337, Amazon Prime=119, HBO Max=384, Hulu=15, Apple TV=350.
-      - Regions: Austria=AT, Germany=DE, USA=US, UK=GB. (Default to US if unknown).
-
-      ### OUTPUT FORMAT (JSON ONLY)
+      You are a JSON machine. Convert user text to TMDB API parameters.
       
-      **Scenario A: User asks for a specific movie or franchise (e.g., "Scary Movie", "Harry Potter", "Inception")**
-      {
-        "strategy": "search",
-        "query": "Scary Movie", 
-        "year": "optional_year"
-      }
+      Rules:
+      * Default 'vote_count.gte' to 300 (Avoid garbage).
+      * Default 'sort_by' to 'popularity.desc' (Relevance).
+      * Map 'Netflix' to provider ID 8, 'Disney+' to 337, 'Amazon' to 119.
+      * CRITIAL: If user names a specific movie (e.g. 'Avenger'), return strategy: 'search' and the specific title.
+      * If user describes a vibe, return strategy: 'discover' with filters (genres, keywords).
+      * Output JSON only.
 
-      **Scenario B: User asks for a vibe/genre (e.g., "Scary movie from the 90s on Netflix")**
-      {
-        "strategy": "discover",
-        "params": {
-          "with_genres": "27",
-          "primary_release_date.gte": "1990-01-01",
-          "primary_release_date.lte": "1999-12-31",
-          "watch_region": "US",
-          "with_watch_providers": "8",
-          "sort_by": "popularity.desc"
-        }
-      }
+      Example Search: { "strategy": "search", "query": "Avengers: Endgame" }
+      Example Discover: { "strategy": "discover", "params": { "with_genres": "27", "vote_count.gte": "300", "sort_by": "popularity.desc" } }
 
-      User Input: "${prompt}"
+      Input: "${prompt}"
     `;
 
-    // 3. Ask Gemini
-    const result = await model.generateContent(systemInstruction);
-    const aiResponse = JSON.parse(result.response.text());
-    
-    // 4. Execute TMDB Fetch based on Strategy
+    // Race Condition: AI vs Clock
+    const aiPromise = model.generateContent(systemInstruction);
+    const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout")), TIMEOUT_MS));
+
+    let aiContext = {};
     let tmdbData;
     const baseUrl = 'https://api.themoviedb.org/3';
-    
-    if (aiResponse.strategy === 'search') {
-        // Strategy: SEARCH
-        const query = encodeURIComponent(aiResponse.query);
-        const yearParam = aiResponse.year ? `&year=${aiResponse.year}` : '';
-        const url = `${baseUrl}/search/movie?api_key=${tmdbKey}&query=${query}${yearParam}&language=en-US&page=1`;
-        
-        const fetchRes = await fetch(url);
-        tmdbData = await fetchRes.json();
-    } else {
-        // Strategy: DISCOVER
-        const params = new URLSearchParams({
-            api_key: tmdbKey,
-            language: 'en-US',
-            page: '1',
-            include_adult: 'false',
-            include_video: 'false',
-            ...aiResponse.params
-        });
-        
-        const url = `${baseUrl}/discover/movie?${params.toString()}`;
-        const fetchRes = await fetch(url);
-        tmdbData = await fetchRes.json();
+
+    try {
+        const result = await Promise.race([aiPromise, timeoutPromise]);
+        const aiResponse = JSON.parse(result.response.text());
+        aiContext = aiResponse;
+
+        if (aiResponse.strategy === 'search') {
+            const query = encodeURIComponent(aiResponse.query);
+            const u = `${baseUrl}/search/movie?api_key=${tmdbKey}&query=${query}&language=en-US&page=1`;
+            const r = await fetch(u);
+            tmdbData = await r.json();
+        } else {
+            const params = new URLSearchParams({
+                api_key: tmdbKey,
+                language: 'en-US',
+                include_adult: 'false',
+                include_video: 'false',
+                'vote_count.gte': '300', // Hard safety
+                sort_by: 'popularity.desc', // Default sort
+                ...aiResponse.params
+            });
+            const u = `${baseUrl}/discover/movie?${params.toString()}`;
+            const r = await fetch(u);
+            tmdbData = await r.json();
+        }
+
+    } catch (err) {
+        console.log("AI/Fetch Failed or Timed out, switching to Fallback:", err.message);
+        // Fallback Logic immediately
+        const fallbackUrl = `${baseUrl}/trending/movie/day?api_key=${tmdbKey}`;
+        const fallbackRes = await fetch(fallbackUrl);
+        tmdbData = await fallbackRes.json();
+        aiContext = { strategy: 'fallback', reason: err.message };
     }
 
-    // 5. Select Winning Movie
+    // Selection Logic
     if (!tmdbData.results || tmdbData.results.length === 0) {
-         // Fallback to trending
-         const fallbackUrl = `${baseUrl}/trending/movie/week?api_key=${tmdbKey}`;
-         const fallbackRes = await fetch(fallbackUrl);
-         tmdbData = await fallbackRes.json();
+        // Double fallback if search yielded 0
+        const fallbackUrl = `${baseUrl}/trending/movie/day?api_key=${tmdbKey}`;
+        const fallbackRes = await fetch(fallbackUrl);
+        tmdbData = await fallbackRes.json();
     }
 
     let winner;
-    if (aiResponse.strategy === 'search') {
-        // For specific searches, the Top Result is usually the one requested.
-        // If the AI said "Avengers: Infinity War", result[0] will be that movie.
-        winner = tmdbData.results[0];
+    if (aiContext.strategy === 'search' && tmdbData.results.length > 0) {
+        winner = tmdbData.results[0]; // Top relevance for specific search
     } else {
-        // For vibes (Discover), keep it random/spicy from the top 5.
+        // For discover/trending, pick top 5
         const candidates = tmdbData.results.slice(0, 5);
         winner = candidates[Math.floor(Math.random() * candidates.length)];
     }
 
     return new Response(JSON.stringify({ 
         movie: winner, 
-        aiContext: aiResponse 
+        aiContext 
     }), {
       status: 200,
       headers: { 'Content-Type': 'application/json' }
     });
 
-  } catch (error) {
-    console.error('AI Spin Error:', error);
-    return new Response(JSON.stringify({ error: 'Internal Server Error', details: error.toString() }), { status: 500 });
+  } catch (criticalError) {
+    console.error('Critical Error:', criticalError);
+    return new Response(JSON.stringify({ error: 'Internal Error' }), { status: 500 });
   }
 }
