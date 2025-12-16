@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useRegion } from '../contexts/RegionContext';
+import { getCountries } from '../services/tmdb';
 import { Search, MapPin, Globe, Check } from 'lucide-react';
 
 const PRIORITY_REGIONS = [
@@ -23,6 +24,27 @@ const RegionModal = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [allCountries, setAllCountries] = useState(PRIORITY_REGIONS);
+
+  useEffect(() => {
+    const fetchCountries = async () => {
+        try {
+            const countries = await getCountries();
+            // Map to our format { code: 'US', name: 'United States' }
+            const formatted = countries.map(c => ({
+                code: c.iso_3166_1,
+                name: c.english_name || c.native_name
+            }));
+            
+            // Sort alphabetically
+            formatted.sort((a, b) => a.name.localeCompare(b.name));
+            setAllCountries(formatted);
+        } catch (e) {
+            console.error("Failed to fetch countries", e);
+            // Fallback to priority list is already in state default
+        }
+    };
+    fetchCountries();
+  }, []);
 
   useEffect(() => {
     if (!loading && !userRegion) {
