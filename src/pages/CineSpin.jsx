@@ -34,63 +34,68 @@ const CineSpin = () => {
 
   const startSpin = async (customFilters = null) => {
     if (spinning) return;
+    
+    // INP FIX: Update UI State IMMEDIATELY to unblock main thread
     setSpinning(true);
     setResult(null);
     setError(null);
 
-    try {
-        // 1. Construct Filters
-        let apiFilters = {
-            include_adult: false,
-            include_video: false,
-            sort_by: 'popularity.desc', 
-            'vote_count.gte': 100, 
-        };
+    // Defer heavy logic to next tick to allow UI to render "Spinning..." state first
+    setTimeout(async () => {
+        try {
+            // 1. Construct Filters
+            let apiFilters = {
+                include_adult: false,
+                include_video: false,
+                sort_by: 'popularity.desc', 
+                'vote_count.gte': 100, 
+            };
 
-        if (customFilters && Object.keys(customFilters).length > 0) {
-            // Use injected filters from AI
-            Object.assign(apiFilters, customFilters);
-        } else {
-            // Use manual selections
-            if (selections.duration) Object.assign(apiFilters, selections.duration.value);
-            if (selections.era) Object.assign(apiFilters, selections.era.value);
-            if (selections.mood) Object.assign(apiFilters, selections.mood.value);
+            if (customFilters && Object.keys(customFilters).length > 0) {
+                // Use injected filters from AI
+                Object.assign(apiFilters, customFilters);
+            } else {
+                // Use manual selections
+                if (selections.duration) Object.assign(apiFilters, selections.duration.value);
+                if (selections.era) Object.assign(apiFilters, selections.era.value);
+                if (selections.mood) Object.assign(apiFilters, selections.mood.value);
+            }
+
+            // 2. Fetch
+            // Try random page to ensure variety
+            const randomPage = Math.floor(Math.random() * 10) + 1;
+            let results = await discover('movie', { ...apiFilters, page: randomPage });
+            
+            // Fallback to page 1 if empty
+            if (!results || results.length === 0) {
+                results = await discover('movie', { ...apiFilters, page: 1 });
+            }
+
+            if (results && results.length > 0) {
+                const winner = results[Math.floor(Math.random() * results.length)];
+                winner.media_type = 'movie'; // Default to movie for now
+                
+                // Fake Spin Delay for "Juiciness" (at least 1.5s total spin time)
+                await new Promise(r => setTimeout(r, 1500));
+                
+                const details = await getDetails('movie', winner.id);
+                setResult(winner);
+                setResultDetails(details);
+                
+                // Save to History
+                saveSpin(winner);
+
+            } else {
+                throw new Error("No movies found for this vibe.");
+            }
+
+        } catch (e) {
+            console.error("Spin failed", e);
+            setError("Couldn't find a match. Try less specific vibes!");
+        } finally {
+            setSpinning(false);
         }
-
-        // 2. Fetch
-        // Try random page to ensure variety
-        const randomPage = Math.floor(Math.random() * 10) + 1;
-        let results = await discover('movie', { ...apiFilters, page: randomPage });
-        
-        // Fallback to page 1 if empty
-        if (!results || results.length === 0) {
-            results = await discover('movie', { ...apiFilters, page: 1 });
-        }
-
-        if (results && results.length > 0) {
-             const winner = results[Math.floor(Math.random() * results.length)];
-             winner.media_type = 'movie'; // Default to movie for now
-             
-             // Fake Spin Delay for "Juiciness"
-             await new Promise(r => setTimeout(r, 1500));
-             
-             const details = await getDetails('movie', winner.id);
-             setResult(winner);
-             setResultDetails(details);
-             
-             // Save to History
-             saveSpin(winner);
-
-        } else {
-            throw new Error("No movies found for this vibe.");
-        }
-
-    } catch (e) {
-        console.error("Spin failed", e);
-        setError("Couldn't find a match. Try less specific vibes!");
-    } finally {
-        setSpinning(false);
-    }
+    }, 0);
   };
 
   const reset = () => {
