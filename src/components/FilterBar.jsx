@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { getGenres, getCountries, getWatchProviders, getImageUrl } from '../services/tmdb';
 import { ChevronDown, ChevronUp, Globe, Clock, Calendar, Star, Tv } from 'lucide-react';
 import SearchableDropdown from './SearchableDropdown';
+import { useRegion } from '../contexts/RegionContext';
 
 // Countries with known active film industries/consumer base
 const RELEVANT_COUNTRY_CODES = [
@@ -12,13 +13,26 @@ const RELEVANT_COUNTRY_CODES = [
 ];
 
 const FilterBar = ({ onFilterChange }) => {
+  const { userRegion, changeRegion } = useRegion();
   const [genres, setGenres] = useState([]);
   const [countries, setCountries] = useState([]);
   const [providers, setProviders] = useState([]);
   
   const [selectedGenres, setSelectedGenres] = useState([]);
-  const [selectedCountry, setSelectedCountry] = useState('US'); // Default to US for better UX
+  const [selectedCountry, setSelectedCountry] = useState(userRegion || 'US'); 
   const [selectedProviders, setSelectedProviders] = useState([]);
+
+  // Sync Global Region Change
+  useEffect(() => {
+    if (userRegion) {
+        setSelectedCountry(userRegion);
+    }
+  }, [userRegion]);
+
+  const handleRegionChange = (code) => {
+      setSelectedCountry(code);
+      changeRegion(code); // Update Global Context
+  };
   
   // Runtime (Dual Slider State)
   const [minRuntime, setMinRuntime] = useState(0);
@@ -181,7 +195,7 @@ const FilterBar = ({ onFilterChange }) => {
             <SearchableDropdown 
                 options={countryOptions}
                 value={selectedCountry}
-                onChange={setSelectedCountry}
+                onChange={handleRegionChange}
                 placeholder="Select Region"
                 icon={<Globe size={14} />}
             />

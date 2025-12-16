@@ -11,11 +11,15 @@ const tmdb = axios.create({
   },
 });
 
+const filterValidMovies = (results) => {
+    return results.filter(movie => movie.poster_path && movie.backdrop_path);
+};
+
 export const getTrending = async (type = 'all', timeWindow = 'day', page = 1) => {
   const response = await tmdb.get(`/trending/${type}/${timeWindow}`, {
     params: { page },
   });
-  return response.data.results.filter(movie => movie.poster_path && movie.backdrop_path);
+  return filterValidMovies(response.data.results);
 };
 
 export const getGenres = async (type = 'movie') => {
@@ -23,7 +27,13 @@ export const getGenres = async (type = 'movie') => {
   return response.data.genres;
 };
 
+// Re-use pagination logic but return only results for backward compatibility
 export const discover = async (type, params, region = null) => {
+    const data = await discoverWithPagination(type, params, region);
+    return data.results;
+};
+
+export const discoverWithPagination = async (type, params, region = null) => {
   const finalParams = { ...params };
   
   if (region) {
@@ -32,10 +42,15 @@ export const discover = async (type, params, region = null) => {
   }
 
   const response = await tmdb.get(`/discover/${type}`, { params: finalParams });
-  return response.data.results.filter(movie => movie.poster_path && movie.backdrop_path);
+  
+  return {
+      results: filterValidMovies(response.data.results),
+      total_results: response.data.total_results,
+      total_pages: response.data.total_pages
+  };
 };
 
-export const searchMovies = async (query, region = null) => {
+export const searchMovies = async (query) => {
   const params = { query };
   
   // NOTE: Search endpoint doesn't support watch_region filtering natively in V3 without discover magic.
@@ -48,7 +63,7 @@ export const searchMovies = async (query, region = null) => {
   // BUT: For "Discover/AI", we MUST filter.
 
   const response = await tmdb.get('/search/movie', { params });
-  return response.data.results.filter(movie => movie.poster_path && movie.backdrop_path);
+  return filterValidMovies(response.data.results);
 };
 
 export const getDetails = async (type, id) => {

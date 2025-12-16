@@ -6,12 +6,12 @@ const Trivia = () => {
   const [loading, setLoading] = useState(true);
   const [currentMovie, setCurrentMovie] = useState(null);
   const [options, setOptions] = useState([]);
-  const [score, setScore] = useState(0);
   const [sessionStreak, setSessionStreak] = useState(0); // Correct answers in a row
   const [bestStreak, setBestStreak] = useState(0); // All time best run
   const [answered, setAnswered] = useState(false);
   const [selectedOption, setSelectedOption] = useState(null);
   const [isCorrect, setIsCorrect] = useState(false);
+  const [showResult, setShowResult] = useState(false);
 
   // Initialize Best Streak
   useEffect(() => {
@@ -132,7 +132,6 @@ const Trivia = () => {
 
     if (movie.id === currentMovie.id) {
         setIsCorrect(true);
-        setScore(score + 10);
         
         const newStreak = sessionStreak + 1;
         setSessionStreak(newStreak);
@@ -160,35 +159,25 @@ const Trivia = () => {
   return (
     <div className="container mx-auto px-4 py-8 max-w-6xl">
       {/* Header Stats */}
-      <div className="flex justify-between items-center mb-6 bg-surface p-4 rounded-xl border border-gray-800 shadow-lg">
-        <div className="flex items-center gap-3">
-            <div className="bg-accent/10 p-2 rounded-lg">
-                <Trophy className="text-accent" size={24} />
-            </div>
-            <div>
-                <p className="text-xs text-text-secondary uppercase font-bold">Score</p>
-                <p className="text-2xl font-black text-text-primary">{score}</p>
-            </div>
-        </div>
-        <div className="flex items-center gap-6">
+      {/* Header Stats - Centered, No background */}
+      <div className="flex justify-center items-center gap-6 mb-6">
             {/* Session Streak */}
-            <div className="flex items-center gap-3 px-3 py-2 bg-gray-800 rounded-lg border border-gray-700">
-                <span className="text-xl">⚡</span>
+            <div className="flex items-center gap-3 px-4 py-3 bg-gray-800/80 backdrop-blur rounded-2xl border border-gray-700 min-w-[120px] justify-center">
+                <span className="text-2xl">⚡</span>
                 <div>
-                    <p className="text-[10px] text-text-secondary uppercase font-bold">Run</p>
-                    <p className="text-xl font-black text-text-primary">{sessionStreak}</p>
+                    <p className="text-[10px] text-text-secondary uppercase font-bold tracking-wider">Run</p>
+                    <p className="text-xl font-black text-text-primary leading-none">{sessionStreak}</p>
                 </div>
             </div>
             
             {/* Best Streak */}
-            <div className="flex items-center gap-3 px-3 py-2 bg-gray-800 rounded-lg border border-yellow-500/30 shadow-[0_0_10px_rgba(234,179,8,0.1)]">
+            <div className="flex items-center gap-3 px-4 py-3 bg-gray-800/80 backdrop-blur rounded-2xl border border-yellow-500/30 shadow-[0_0_15px_rgba(234,179,8,0.1)] min-w-[120px] justify-center">
                 <Crown className="text-yellow-500" size={24} />
                 <div>
-                    <p className="text-[10px] text-yellow-400 uppercase font-bold">Best</p>
-                    <p className="text-xl font-black text-yellow-500">{bestStreak}</p>
+                    <p className="text-[10px] text-yellow-400 uppercase font-bold tracking-wider">Best</p>
+                    <p className="text-xl font-black text-yellow-500 leading-none">{bestStreak}</p>
                 </div>
             </div>
-        </div>
       </div>
 
       {/* Game Card - Side by Side Layout */}

@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Film, Trophy, TrendingUp, HelpCircle } from 'lucide-react';
+import { Film, Trophy, TrendingUp, HelpCircle, Sparkles } from 'lucide-react';
 
 const GamesHub = () => {
     const games = [
@@ -42,10 +42,16 @@ const GamesHub = () => {
                 <h1 className="text-5xl font-black mb-4 bg-linear-to-r from-accent to-purple-500 text-transparent bg-clip-text drop-shadow-lg">
                     Arcade Zone
                 </h1>
-                <p className="text-text-secondary text-lg max-w-2xl mx-auto">
+                <p className="text-text-secondary text-lg max-w-2xl mx-auto mb-8">
                     Challenge yourself with our collection of interactive movie games. 
                     Climb the leaderboards and prove you are the ultimate cinephile.
                 </p>
+
+                {/* AI Banner */}
+                <div className="inline-flex items-center gap-3 px-6 py-3 rounded-full bg-linear-to-r from-purple-900/50 to-pink-900/50 border border-purple-500/50 text-purple-200 text-sm font-medium animate-pulse shadow-[0_0_20px_rgba(168,85,247,0.2)]">
+                    <Sparkles size={16} className="text-purple-400" />
+                    <span>AI-Powered Challenges Coming Soon: Infinite fun generated just for you!</span>
+                </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">

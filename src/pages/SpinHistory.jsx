@@ -52,9 +52,7 @@ const SpinHistory = () => {
                 {history.map((movie, index) => (
                     <div key={`${movie.id}-${index}`} className="relative group">
                          <MovieCard movie={movie} type="movie" />
-                         <div className="absolute top-2 right-2 bg-black/60 backdrop-blur px-2 py-1 rounded text-xs text-gray-300 font-mono">
-                             {new Date(movie.spunAt).toLocaleDateString()}
-                         </div>
+
                     </div>
                 ))}
             </div>

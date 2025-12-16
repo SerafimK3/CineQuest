@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, Link } from 'react-router-dom';
 import { discover, getDetails, getImageUrl } from '../services/tmdb';
 import MovieCard from '../components/MovieCard';
 import VibeSelector from '../components/VibeSelector';
@@ -16,11 +16,13 @@ const CineSpin = () => {
   const [error, setError] = useState(null);
   
   // New Vibe State
+  // New Vibe State
   const [selections, setSelections] = useState({
       duration: null,
       era: null,
       mood: null
   });
+  const [seenIds, setSeenIds] = useState(new Set()); // Track session duplicates
 
   const handleVibeSelect = (category, option) => {
       setSelections(prev => ({ ...prev, [category]: option }));
@@ -28,7 +30,6 @@ const CineSpin = () => {
 
   // Check for auto-spin from VibeCoder on mount
   useEffect(() => {
-      // If we have injected filters and we haven't spun yet
       if (location.state?.autoSpin && location.state?.injectedFilters && !spinning && !result) {
           startSpin(location.state.injectedFilters);
       }
@@ -37,12 +38,11 @@ const CineSpin = () => {
   const startSpin = async (customFilters = null) => {
     if (spinning) return;
     
-    // INP FIX: Update UI State IMMEDIATELY to unblock main thread
     setSpinning(true);
     setResult(null);
     setError(null);
 
-    // Defer heavy logic to next tick to allow UI to render "Spinning..." state first
+    // Defer heavy logic
     setTimeout(async () => {
         try {
             // 1. Construct Filters
@@ -53,42 +53,53 @@ const CineSpin = () => {
                 'vote_count.gte': 100, 
             };
 
+            // Use injected OR current selections
             if (customFilters && Object.keys(customFilters).length > 0) {
-                // Use injected filters from AI
                 Object.assign(apiFilters, customFilters);
             } else {
-                // Use manual selections
                 if (selections.duration) Object.assign(apiFilters, selections.duration.value);
                 if (selections.era) Object.assign(apiFilters, selections.era.value);
                 if (selections.mood) Object.assign(apiFilters, selections.mood.value);
             }
 
-            // 2. Fetch
-            // Try random page to ensure variety
-            const randomPage = Math.floor(Math.random() * 10) + 1;
-            let results = await discover('movie', { ...apiFilters, page: randomPage }, userRegion);
+            // 2. Fetch with Retries for uniqueness
+            let winner = null;
+            let attempts = 0;
             
-            // Fallback to page 1 if empty
-            if (!results || results.length === 0) {
-                results = await discover('movie', { ...apiFilters, page: 1 }, userRegion);
+            while (!winner && attempts < 3) {
+                const randomPage = Math.floor(Math.random() * 10) + 1;
+                let results = await discover('movie', { ...apiFilters, page: randomPage }, userRegion);
+                
+                // Fallback page 1
+                if (!results || results.length === 0) {
+                    results = await discover('movie', { ...apiFilters, page: 1 }, userRegion);
+                }
+
+                if (results && results.length > 0) {
+                    // Filter out seen
+                    const candidates = results.filter(m => !seenIds.has(m.id));
+                    
+                    if (candidates.length > 0) {
+                        winner = candidates[Math.floor(Math.random() * candidates.length)];
+                    }
+                }
+                attempts++;
             }
 
-            if (results && results.length > 0) {
-                const winner = results[Math.floor(Math.random() * results.length)];
-                winner.media_type = 'movie'; // Default to movie for now
+            if (winner) {
+                winner.media_type = 'movie';
                 
-                // Fake Spin Delay for "Juiciness" (at least 1.5s total spin time)
+                // Fake Spin Delay
                 await new Promise(r => setTimeout(r, 1500));
                 
                 const details = await getDetails('movie', winner.id);
                 setResult(winner);
                 setResultDetails(details);
+                setSeenIds(prev => new Set(prev).add(winner.id));
                 
-                // Save to History
                 saveSpin(winner);
-
             } else {
-                throw new Error("No movies found for this vibe.");
+                throw new Error("No new movies found.");
             }
 
         } catch (e) {
@@ -104,12 +115,15 @@ const CineSpin = () => {
       setResult(null);
       setResultDetails(null);
       setError(null);
+      // Clear filters and history for a fresh start
+      setSelections({ duration: null, era: null, mood: null }); 
+      setSeenIds(new Set()); 
   };
 
   return (
     <div className="min-h-[calc(100vh-64px)] bg-black text-white font-sans flex flex-col items-center justify-center p-4 relative overflow-hidden">
       
-      {/* Background Decor (Cyberpunk Glow) */}
+      {/* Background Decor */}
       <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none z-0">
           <div className="absolute top-[-20%] left-[-20%] w-[50%] h-[50%] bg-purple-600/20 rounded-full blur-[120px] animate-pulse-slow"></div>
           <div className="absolute bottom-[-20%] right-[-20%] w-[50%] h-[50%] bg-pink-600/20 rounded-full blur-[120px] animate-pulse-slow delay-1000"></div>
@@ -117,8 +131,21 @@ const CineSpin = () => {
 
       <div className="w-full max-w-4xl z-10 flex flex-col items-center">
         
-        {/* VIEW 1: SELECTOR (If no result) */}
-        {!result && (
+        {/* VIEW 0: SEARCHING (Fullscreen Spinner) */}
+        {spinning && (
+            <div className="flex flex-col items-center justify-center animate-in fade-in zoom-in duration-300">
+                 <div className="relative mb-8">
+                     <div className="absolute inset-0 bg-accentBlur rounded-full blur-xl animate-pulse"></div>
+                     <Sparkles size={64} className="text-accent animate-spin-slow relative z-10" />
+                 </div>
+                 <h2 className="text-2xl font-black uppercase tracking-widest text-transparent bg-clip-text bg-linear-to-r from-purple-400 to-pink-500 animate-pulse">
+                     Consulting the Oracle...
+                 </h2>
+            </div>
+        )}
+
+        {/* VIEW 1: SELECTOR (Only if NOT result AND NOT spinning) */}
+        {!result && !spinning && (
             <>
                 <div className="text-center mb-10 animate-in fade-in zoom-in duration-700">
                     <h1 className="text-4xl lg:text-6xl font-black text-transparent bg-clip-text bg-linear-to-r from-purple-400 via-pink-500 to-red-500 tracking-tighter drop-shadow-[0_0_30px_rgba(236,72,153,0.5)] mb-4">
@@ -137,19 +164,12 @@ const CineSpin = () => {
 
                 <div className="mt-12 mb-20">
                     <button
-                        onClick={() => startSpin(null)} // Call without arguments for manual
-                        disabled={spinning}
-                        className={`group relative px-12 py-6 rounded-full bg-linear-to-r from-accent to-purple-600 text-black font-black text-2xl tracking-widest uppercase transition-all duration-300 transform hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed shadow-[0_0_50px_rgba(0,229,255,0.4)] hover:shadow-[0_0_80px_rgba(236,72,153,0.6)] ${spinning ? 'animate-pulse' : ''}`}
+                        onClick={() => startSpin(null)}
+                        className={`group relative px-12 py-6 rounded-full bg-linear-to-r from-accent to-purple-600 text-black font-black text-2xl tracking-widest uppercase transition-all duration-300 transform hover:scale-105 active:scale-95 shadow-[0_0_50px_rgba(0,229,255,0.4)] hover:shadow-[0_0_80px_rgba(236,72,153,0.6)]`}
                     >
-                        {spinning ? (
-                            <span className="flex items-center gap-3">
-                                <Sparkles className="animate-spin" /> Deciding...
-                            </span>
-                        ) : (
-                            <span className="flex items-center gap-3">
-                                Decide For Me <Dice5 size={28} />
-                            </span>
-                        )}
+                        <span className="flex items-center gap-3">
+                            Decide For Me <Dice5 size={28} />
+                        </span>
                         
                         {/* Button Glow Ring */}
                         <div className="absolute -inset-1 rounded-full bg-linear-to-r from-accent to-pink-500 blur opacity-30 group-hover:opacity-100 transition duration-500"></div>
@@ -159,7 +179,7 @@ const CineSpin = () => {
         )}
 
         {/* VIEW 2: RESULT */}
-        {result && resultDetails && (
+        {result && resultDetails && !spinning && (
             <div className="w-full flex flex-col items-center animate-in fade-in zoom-in duration-500">
                 
                 {/* Result Card (Massive) */}
@@ -176,15 +196,13 @@ const CineSpin = () => {
                          <p className="text-gray-300 line-clamp-2 text-sm mb-6 font-medium">{result.overview}</p>
                          
                          <div className="flex flex-col gap-3">
-                             {/* Watch Now */}
-                             <a 
-                                href={`https://www.themoviedb.org/movie/${result.id}/watch`} 
-                                target="_blank"
-                                rel="noreferrer" 
+                             {/* Watch Page (Internal) */}
+                             <Link 
+                                to={`/movie/${result.id}`} 
                                 className="w-full py-4 bg-white text-black font-black uppercase tracking-widest rounded-xl hover:bg-accent transition-colors flex items-center justify-center gap-2"
                              >
-                                 <Play fill="currentColor" size={18} /> Watch Now
-                             </a>
+                                 <Play fill="currentColor" size={18} /> View Details
+                             </Link>
                              
                              {/* Spin Again */}
                              <div className="flex gap-3">

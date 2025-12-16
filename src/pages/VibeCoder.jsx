@@ -80,29 +80,34 @@ const VibeCoder = () => {
   };
 
   return (
-    <div className="min-h-[calc(100vh-64px)] bg-black text-white p-6 flex flex-col items-center justify-center relative overflow-hidden">
+    <div className="h-[calc(100vh-64px)] bg-black text-white p-4 flex flex-col items-center justify-center relative overflow-hidden">
         
       {/* Matrix / Code Background Effect */}
       <div className="absolute inset-0 opacity-10 pointer-events-none" 
            style={{ backgroundImage: 'radial-gradient(circle at 50% 50%, #00E5FF 1px, transparent 1px)', backgroundSize: '20px 20px' }}>
       </div>
 
-      <div className="w-full max-w-4xl z-10 animate-in slide-in-from-bottom-8 duration-700 flex flex-col items-center">
+      <div className="w-full max-w-4xl z-10 animate-in slide-in-from-bottom-8 duration-700 flex flex-col items-center h-full">
           
-          <div className="text-center mb-8">
-              <div className="inline-flex items-center gap-2 bg-purple-900/30 border border-purple-500/50 px-4 py-1 rounded-full text-purple-300 text-sm font-bold mb-4 uppercase tracking-widest">
-                  <BrainCircuit size={16} /> True AI Powered 
-                  <span className="bg-purple-500 text-black text-[10px] px-1.5 py-0.5 rounded font-black ml-2">BETA</span>
-              </div>
-              <h1 className="text-4xl md:text-5xl font-black mb-4">
-                  Movie Oracle
-              </h1>
-              <p className="text-gray-400 text-lg">
-                  Explain the movie you want to watch.
-              </p>
-          </div>
+          {/* Header - Only show if NO result to save space, OR make it smaller? 
+              User wants "fit on page". Hiding header on Result view is best for focus.
+          */}
+          {!result && (
+            <div className="text-center mb-8 mt-10">
+                <div className="inline-flex items-center gap-2 bg-purple-900/30 border border-purple-500/50 px-4 py-1 rounded-full text-purple-300 text-sm font-bold mb-4 uppercase tracking-widest">
+                    <BrainCircuit size={16} /> True AI Powered 
+                    <span className="bg-purple-500 text-black text-[10px] px-1.5 py-0.5 rounded font-black ml-2">BETA</span>
+                </div>
+                <h1 className="text-4xl md:text-5xl font-black mb-4">
+                    Movie Oracle
+                </h1>
+                <p className="text-gray-400 text-lg">
+                    Explain the movie you want to watch.
+                </p>
+            </div>
+          )}
 
-          {/* INPUT SECTION - Hide when result is shown? No, keep it for refinement */}
+          {/* INPUT SECTION */}
           {!result && (
               <div className="w-full max-w-2xl relative group mb-10">
                   <textarea
@@ -132,15 +137,18 @@ const VibeCoder = () => {
           )}
 
           {result && (
-              <div className="w-full flex flex-col items-center animate-in zoom-in-95 duration-500">
-                  <div className="scale-110 mb-8 touch-none">
-                    <MovieCard 
-                        movie={result} 
-                        enableSwipe={false}
-                    />
+              <div className="w-full h-full flex flex-col items-center justify-between pb-8 pt-4 animate-in zoom-in-95 duration-500">
+                  {/* Flexible Card Container - Fits available height */}
+                  <div className="flex-1 min-h-0 w-full flex items-center justify-center p-2">
+                    <div className="h-full w-auto aspect-[2/3] max-h-[70vh] shadow-2xl rounded-lg overflow-hidden">
+                        <MovieCard 
+                            movie={result} 
+                            enableSwipe={false}
+                        />
+                    </div>
                   </div>
 
-                  <div className="flex gap-4">
+                  <div className="flex-none mt-6">
                       <button onClick={clearResult} className="px-8 py-3 bg-white text-black rounded-full hover:scale-105 active:scale-95 flex items-center gap-2 font-black uppercase tracking-widest transition-all shadow-[0_0_20px_rgba(255,255,255,0.3)]">
                           <X size={20} /> New Search
                       </button>

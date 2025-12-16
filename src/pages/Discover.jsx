@@ -1,10 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { discover } from '../services/tmdb';
+import { discoverWithPagination } from '../services/tmdb';
 import MovieCard from '../components/MovieCard';
 import FilterBar from '../components/FilterBar';
+import { useRegion } from '../contexts/RegionContext';
 
 const Discover = () => {
+  const { userRegion } = useRegion();
   const [movies, setMovies] = useState([]);
+  const [totalPages, setTotalPages] = useState(0); // Track max pages
   const [loading, setLoading] = useState(false);
   const [filters, setFilters] = useState({
     sort_by: 'popularity.desc',
@@ -17,7 +20,7 @@ const Discover = () => {
     setLoading(true);
     try {
       const { media_type = 'movie', ...apiFilters } = currentFilters;
-      const type = media_type === 'all' ? 'movie' : media_type; // Default to movie if 'all' passed, though FilterBar toggles logic
+      const type = media_type === 'all' ? 'movie' : media_type; 
 
       // Remap params for TV
       if (type === 'tv') {
@@ -31,14 +34,30 @@ const Discover = () => {
           }
       }
 
-      const results = await discover(type, apiFilters);
+      const data = await discoverWithPagination(type, apiFilters, userRegion);
+      
       if (append) {
+        // Filter unique
+        let addedCount = 0;
         setMovies(prev => {
-          const newMovies = results.filter(newMovie => !prev.some(m => m.id === newMovie.id));
+          const newMovies = data.results.filter(newMovie => !prev.some(m => m.id === newMovie.id));
+          addedCount = newMovies.length;
           return [...prev, ...newMovies];
         });
+
+        // RECURSION CHECK: If we got results from API but filtered them all out (addedCount 0), 
+        // and we have more pages, try next page immediately.
+        if (data.results.length === 0 && apiFilters.page < data.total_pages) {
+            console.log("Empty page found, skipping to next...");
+            const nextFilters = { ...currentFilters, page: currentFilters.page + 1 };
+            setFilters(nextFilters);
+            // Small delay to prevent stack overflow/rapid fire
+            setTimeout(() => fetchMovies(nextFilters, true), 100); 
+        }
+
       } else {
-        setMovies(results);
+        setMovies(data.results);
+        setTotalPages(data.total_pages);
       }
     } catch (error) {
       console.error("Failed to discover movies:", error);
@@ -50,7 +69,7 @@ const Discover = () => {
   // Initial fetch
   useEffect(() => {
     fetchMovies(filters);
-  }, []);
+  }, [userRegion]); // Re-fetch when region changes
 
   const handleFilterChange = (newFilters) => {
     const updatedFilters = { ...filters, ...newFilters, page: 1 };
@@ -89,22 +108,24 @@ const Discover = () => {
                 ))}
               </div>
               
-              <div className="flex justify-center pb-8">
-                <button
-                  onClick={handleLoadMore}
-                  disabled={loading}
-                  className="bg-surface hover:bg-gray-700 text-text-primary font-semibold py-3 px-8 rounded-full transition shadow-lg border border-gray-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-                >
-                  {loading ? (
-                    <>
-                      <div className="animate-spin rounded-full h-4 w-4 border-2 border-current border-t-transparent"></div>
-                      Loading...
-                    </>
-                  ) : (
-                    'Show 20 More'
-                  )}
-                </button>
-              </div>
+              {filters.page < totalPages && (
+                  <div className="flex justify-center pb-8">
+                    <button
+                      onClick={handleLoadMore}
+                      disabled={loading}
+                      className="bg-surface hover:bg-gray-700 text-text-primary font-semibold py-3 px-8 rounded-full transition shadow-lg border border-gray-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                    >
+                      {loading ? (
+                        <>
+                          <div className="animate-spin rounded-full h-4 w-4 border-2 border-current border-t-transparent"></div>
+                          Loading...
+                        </>
+                      ) : (
+                        'Show More'
+                      )}
+                    </button>
+                  </div>
+              )}
             </>
           ) : !loading && (
             <div className="text-center text-text-secondary py-12">
