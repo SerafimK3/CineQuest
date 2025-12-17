@@ -123,16 +123,38 @@ const Discover = () => {
     });
   }, [fetchMovies]);
 
+  // Filters Visibility (Mobile/Tablet)
+  const [isFiltersOpen, setIsFiltersOpen] = useState(false);
+
   return (
     <div className="container mx-auto px-4 py-8">
-      <div className="flex flex-col md:flex-row gap-8">
+      <div className="flex flex-col lg:flex-row gap-8">
         {/* Sidebar Filters */}
-        <div className="w-full md:w-1/4">
-          <FilterBar onFilterChange={handleFilterChange} />
+        <div className="w-full lg:w-1/4">
+           {/* Mobile Toggle Button */}
+           <button 
+             onClick={() => setIsFiltersOpen(!isFiltersOpen)}
+             className="w-full lg:hidden flex justify-between items-center bg-surface border border-gray-700 px-6 py-4 rounded-xl text-text-primary font-bold mb-4 shadow-lg active:scale-[0.98] transition-all"
+           >
+              <span className="flex items-center gap-2">
+                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-accent"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+                 Filters
+              </span>
+              <span className={`transform transition-transform duration-300 ${isFiltersOpen ? 'rotate-180' : 'rotate-0'}`}>
+                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+              </span>
+           </button>
+
+           {/* Collapsible Container */}
+           <div className={`grid transition-[grid-template-rows] duration-500 ease-in-out ${isFiltersOpen ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'} lg:grid-rows-[1fr] lg:block`}>
+             <div className="overflow-hidden">
+                <FilterBar onFilterChange={handleFilterChange} />
+             </div>
+           </div>
         </div>
 
         {/* Results Grid */}
-        <div className="w-full md:w-3/4">
+        <div className="w-full lg:w-3/4">
           <h1 className="text-3xl font-bold mb-6 text-text-primary">Discover Movies</h1>
           
           {/* SEARCH BAR */}
