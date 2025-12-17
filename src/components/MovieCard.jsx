@@ -72,7 +72,7 @@ const MovieCard = ({ movie, type, enableSwipe = false, onSwipeLeft, onSwipeRight
                   </div>
               )}
               <img 
-                src={getImageUrl(movie.poster_path, 'w780')} 
+                src={getImageUrl(movie.poster_path, 'w500')} 
                 alt={title} 
                 width="500"
                 height="750"

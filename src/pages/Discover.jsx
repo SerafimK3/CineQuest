@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { discoverWithPagination } from '../services/tmdb';
+import React, { useState, useEffect, useCallback } from 'react';
+import { discoverWithPagination, searchMovies } from '../services/tmdb';
 import MovieCard from '../components/MovieCard';
 import FilterBar from '../components/FilterBar';
 import { useRegion } from '../contexts/RegionContext';
@@ -7,8 +7,9 @@ import { useRegion } from '../contexts/RegionContext';
 const Discover = () => {
   const { userRegion } = useRegion();
   const [movies, setMovies] = useState([]);
-  const [totalPages, setTotalPages] = useState(0); // Track max pages
+  const [totalPages, setTotalPages] = useState(0); 
   const [loading, setLoading] = useState(false);
+  const [searchQuery, setSearchQuery] = useState(''); 
   const [filters, setFilters] = useState({
     sort_by: 'popularity.desc',
     include_adult: false,
@@ -16,73 +17,111 @@ const Discover = () => {
     page: 1,
   });
 
-  const fetchMovies = async (currentFilters, append = false) => {
+  // Stable Fetch Function
+  const fetchMovies = useCallback(async (currentFilters, append = false) => {
+    console.log(`🎬 Fetching: P${currentFilters.page} Append=${append} Query="${searchQuery}"`);
     setLoading(true);
     try {
+      let data;
+      
       const { media_type = 'movie', ...apiFilters } = currentFilters;
-      const type = media_type === 'all' ? 'movie' : media_type; 
-
-      // Remap params for TV
-      if (type === 'tv') {
-          if (apiFilters['primary_release_date.gte']) {
-              apiFilters['first_air_date.gte'] = apiFilters['primary_release_date.gte'];
-              delete apiFilters['primary_release_date.gte'];
+      
+      if (searchQuery.trim()) {
+          const searchType = media_type === 'all' ? 'multi' : media_type;
+          // Pass apiFilters (Genre, Rating, Year etc) to the Search Engine
+          data = await searchMovies(searchQuery, currentFilters.page, searchType, apiFilters);
+      } else {
+          const type = media_type === 'all' ? 'movie' : media_type; 
+          
+          if (type === 'tv') {
+              // ... TV mapping logic remains same, abstracted or inline ...
+              if (apiFilters['primary_release_date.gte']) {
+                  apiFilters['first_air_date.gte'] = apiFilters['primary_release_date.gte'];
+                  delete apiFilters['primary_release_date.gte'];
+              }
+              if (apiFilters['primary_release_date.lte']) {
+                  apiFilters['first_air_date.lte'] = apiFilters['primary_release_date.lte'];
+                  delete apiFilters['primary_release_date.lte'];
+              }
           }
-          if (apiFilters['primary_release_date.lte']) {
-              apiFilters['first_air_date.lte'] = apiFilters['primary_release_date.lte'];
-              delete apiFilters['primary_release_date.lte'];
-          }
+          
+          data = await discoverWithPagination(type, apiFilters, userRegion);
       }
-
-      const data = await discoverWithPagination(type, apiFilters, userRegion);
       
       if (append) {
-        // Filter unique
         let addedCount = 0;
         setMovies(prev => {
           const newMovies = data.results.filter(newMovie => !prev.some(m => m.id === newMovie.id));
           addedCount = newMovies.length;
+          console.log(`➕ Appending ${newMovies.length} movies.`);
           return [...prev, ...newMovies];
         });
-
-        // RECURSION CHECK: If we got results from API but filtered them all out (addedCount 0), 
-        // and we have more pages, try next page immediately.
-        if (data.results.length === 0 && apiFilters.page < data.total_pages) {
-            console.log("Empty page found, skipping to next...");
-            const nextFilters = { ...currentFilters, page: currentFilters.page + 1 };
-            setFilters(nextFilters);
-            // Small delay to prevent stack overflow/rapid fire
-            setTimeout(() => fetchMovies(nextFilters, true), 100); 
+        
+        // Recursion check (using currentFilters from arg, safe)
+        if (!searchQuery && data.results.length === 0 && currentFilters.page < data.total_pages) {
+             // We can't update state inside here easily without triggering re-render, 
+             // but fetchMovies is recursive-friendly if we pass args.
+             // We need to update filters state too? Yes.
+             // setFilters is safe. 
+             const nextFilters = { ...currentFilters, page: currentFilters.page + 1 };
+             setFilters(nextFilters); 
+             setTimeout(() => fetchMovies(nextFilters, true), 100); 
         }
 
       } else {
+        console.log(`🔄 Replacing list with ${data.results.length} items`);
         setMovies(data.results);
         setTotalPages(data.total_pages);
       }
     } catch (error) {
-      console.error("Failed to discover movies:", error);
+      console.error("Failed to fetch movies:", error);
     } finally {
       setLoading(false);
     }
-  };
+  }, [searchQuery, userRegion]); // Dependencies: searchQuery, userRegion. 
 
-  // Initial fetch
+  // Debounce Search Trigger
   useEffect(() => {
-    fetchMovies(filters);
-  }, [userRegion]); // Re-fetch when region changes
+    const delayDebounceFn = setTimeout(() => {
+      console.log("🔍 Search Effect Trigger:", searchQuery);
+      if (searchQuery.trim().length === 0) {
+           if (movies.length === 0 || searchQuery === '') {
+                fetchMovies({ ...filters, page: 1 });
+           }
+      } 
+      else if (searchQuery.length >= 3) {
+        setFilters(prev => ({ ...prev, page: 1 }));
+        fetchMovies({ ...filters, page: 1 });
+      }
+    }, 800); 
 
-  const handleFilterChange = (newFilters) => {
-    const updatedFilters = { ...filters, ...newFilters, page: 1 };
-    setFilters(updatedFilters);
-    fetchMovies(updatedFilters, false);
-  };
+    return () => clearTimeout(delayDebounceFn);
+  }, [searchQuery, fetchMovies]); // fetchMovies is now stable
 
-  const handleLoadMore = () => {
-    const nextPage = filters.page + 1;
-    const updatedFilters = { ...filters, page: nextPage };
-    setFilters(updatedFilters);
-    fetchMovies(updatedFilters, true);
-  };
+  // Initial fetch & Region Change
+  useEffect(() => {
+    if (!searchQuery) {
+        fetchMovies(filters);
+    }
+  }, [userRegion, fetchMovies]); 
+
+  // Handler to passed to FilterBar - MUST BE STABLE
+  const handleFilterChange = useCallback((newFilters) => {
+    setFilters(prev => {
+        const updatedFilters = { ...prev, ...newFilters, page: 1 };
+        fetchMovies(updatedFilters, false);
+        return updatedFilters;
+    });
+  }, [fetchMovies]);
+
+  const handleLoadMore = useCallback(() => {
+    setFilters(prev => {
+        const nextPage = prev.page + 1;
+        const updatedFilters = { ...prev, page: nextPage };
+        fetchMovies(updatedFilters, true);
+        return updatedFilters;
+    });
+  }, [fetchMovies]);
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -96,6 +135,23 @@ const Discover = () => {
         <div className="w-full md:w-3/4">
           <h1 className="text-3xl font-bold mb-6 text-text-primary">Discover Movies</h1>
           
+          {/* SEARCH BAR */}
+          <div className="relative mb-8">
+            <input 
+                type="text" 
+                placeholder="Search specific titles (min 3 chars)..." 
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full bg-surface border border-gray-700 rounded-xl px-6 py-4 text-white placeholder-gray-500 focus:outline-none focus:border-accent transition-colors shadow-sm"
+            />
+            {/* Search Icon (Optional CSS or unicode) */}
+             <div className="absolute right-6 top-1/2 transform -translate-y-1/2 text-gray-400">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+             </div>
+          </div>
+
           {movies.length > 0 ? (
             <>
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-6 mb-8">
@@ -129,7 +185,7 @@ const Discover = () => {
             </>
           ) : !loading && (
             <div className="text-center text-text-secondary py-12">
-              No movies found matching your criteria.
+              {searchQuery ? `No results for "${searchQuery}"` : "No movies found."}
             </div>
           )}
 
