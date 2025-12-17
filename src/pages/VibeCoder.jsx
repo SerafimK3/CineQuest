@@ -11,11 +11,13 @@ const VibeCoder = () => {
   const [prompt, setPrompt] = useState('');
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [result, setResult] = useState(null);
+  const [reason, setReason] = useState(null);
   const [error, setError] = useState(null);
 
   const handleAnalyze = async () => {
     setIsAnalyzing(true);
     setResult(null);
+    setReason(prompt.length > 20 ? "Reading the script..." : "Checking database...");
     setError(null);
     
     const controller = new AbortController();
@@ -34,12 +36,14 @@ const VibeCoder = () => {
 
         if (!response.ok) throw new Error(data.error || "AI request failed");
         setResult(data.movie);
+        setReason(data.aiContext?.reason || null);
 
         // Track AI Vibe Success
         posthog?.capture('ai_vibe_generated', {
             prompt: prompt,
             movie: data.movie.title,
-            movie_id: data.movie.id
+            movie_id: data.movie.id,
+            ai_reason: data.aiContext?.reason
         });
 
     } catch (err) {
@@ -147,6 +151,17 @@ const VibeCoder = () => {
 
           {result && (
               <div className="w-full h-full flex flex-col items-center justify-between pb-8 pt-4 animate-in zoom-in-95 duration-500">
+                  
+                  {/* Oracle's Wisdom */}
+                  {reason && (
+                      <div className="mb-4 px-6 py-2 bg-purple-900/40 border border-purple-500/30 rounded-full backdrop-blur-md animate-in slide-in-from-top-4">
+                          <p className="text-purple-200 text-sm md:text-base font-medium text-center">
+                              <Sparkles className="inline mr-2 text-accent" size={16} />
+                              "{reason}"
+                          </p>
+                      </div>
+                  )}
+
                   {/* Flexible Card Container - Fits available height */}
                   <div className="flex-1 min-h-0 w-full flex items-center justify-center p-2">
                     <div className="h-full w-auto aspect-[2/3] max-h-[70vh] shadow-2xl rounded-lg overflow-hidden">
