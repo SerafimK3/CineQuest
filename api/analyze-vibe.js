@@ -45,17 +45,18 @@ export default async function handler(req, res) {
         
         // Explicit Instruction for List format
         const systemPrompt = `
-          Task: recommend 10 movies based on input: "${prompt}".
+          Task: recommend 10 movies OR TV series based on input: "${prompt}".
           
           CRITICAL LOGIC:
-          1. **DETECTIVE MODE**: If the user describes a specific plot, scene, or actor (e.g. "DiCaprio sinking ship"), the FIRST item in your list MUST be that exact movie ("Titanic").
+          1. **DETECTIVE MODE**: If the user describes a specific plot, scene, or actor (e.g. "DiCaprio sinking ship"), the FIRST item in your list MUST be that exact title ("Titanic").
           2. **FRANCHISE MODE**: If the user mentions a series ("Avengers"), list all of them.
           3. **VIBE MODE**: If the input is vague ("sad 90s movie"), suggest 10 varied recommendations.
+          4. **FORMAT**: If it is a TV Series, just output the title (e.g. "The Office", "Breaking Bad").
 
           Output: JSON Array of strings (Exact English Titles).
           Rules: No explanations. Precise English Titles only.
           
-          Example Output: ["Titanic", "The Beach", "Romeo + Juliet"]
+          Example Output: ["Titanic", "The Office", "Breaking Bad", "The Beach"]
         `;
 
         const aiResult = await model.generateContent(systemPrompt);
@@ -73,7 +74,7 @@ export default async function handler(req, res) {
         } catch (e) {
             console.error("AI Parse Failed:", text);
             // Fallback list to at least try something
-            candidates = ["Parasite", "Whiplash", "Mad Max: Fury Road", "The Grand Budapest Hotel", "Spider-Man: Into the Spider-Verse"];
+            candidates = ["Parasite", "The Office", "Mad Max: Fury Road", "Breaking Bad", "Spider-Man: Into the Spider-Verse"];
         }
     }
 
@@ -97,16 +98,20 @@ export default async function handler(req, res) {
     // Helper to check one movie
     const checkAvailability = async (title) => {
         try {
-            // A. Search ID
-            const searchUrl = `https://api.themoviedb.org/3/search/movie?api_key=${tmdbKey}&query=${encodeURIComponent(title)}`;
+            // A. Search ID (USE MULTI SEARCH NOW)
+            const searchUrl = `https://api.themoviedb.org/3/search/multi?api_key=${tmdbKey}&query=${encodeURIComponent(title)}`;
             const searchRes = await fetch(searchUrl);
             const searchData = await searchRes.json();
             
             if (!searchData.results || searchData.results.length === 0) return null;
-            const movie = searchData.results[0];
+            
+            // Find first Movie OR TV result
+            const match = searchData.results.find(item => item.media_type === 'movie' || item.media_type === 'tv');
+            if (!match) return null;
 
             // B. Check Providers in Region
-            const providerUrl = `https://api.themoviedb.org/3/movie/${movie.id}/watch/providers?api_key=${tmdbKey}`;
+            // Dynamic Endpoint based on media_type
+            const providerUrl = `https://api.themoviedb.org/3/${match.media_type}/${match.id}/watch/providers?api_key=${tmdbKey}`;
             const providerRes = await fetch(providerUrl);
             const providerData = await providerRes.json();
             
@@ -114,7 +119,7 @@ export default async function handler(req, res) {
             
             // C. Criteria: Can we watch it? (Stream, Rent, or Buy)
             if (regionData && (regionData.flatrate || regionData.rent || regionData.buy)) {
-                return { movie, provider: regionData };
+                return { movie: match, provider: regionData };
             }
             return null; // Not available
         } catch (e) {
