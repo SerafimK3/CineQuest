@@ -35,7 +35,7 @@ const BottomTabBar = () => {
                                 className="relative -top-6 flex flex-col items-center justify-center group"
                             >
                                 <div className={cn(
-                                    "w-16 h-16 rounded-full flex items-center justify-center shadow-[0_0_20px_rgba(124,77,255,0.4)] transition-all duration-300",
+                                    "w-16 h-16 rounded-full flex items-center justify-center shadow-[0_0_20px_rgba(124,77,255,0.4)] transition-all duration-300 relative",
                                     isActive 
                                         ? "bg-gradient-to-tr from-accent to-purple-400 scale-110 shadow-[0_0_30px_rgba(124,77,255,0.8)]" 
                                         : "bg-surface border border-white/20 hover:scale-105"
@@ -45,12 +45,16 @@ const BottomTabBar = () => {
                                         className={cn("text-white transition-transform duration-500", isActive && "animate-pulse")} 
                                         fill={isActive ? "currentColor" : "none"}
                                     />
+                                    {/* Beta Badge on Icon */}
+                                    <span className="absolute -top-1 -right-1 text-[8px] font-black bg-purple-600 text-white px-1.5 py-0.5 rounded-full border-2 border-black z-50">
+                                        BETA
+                                    </span>
                                 </div>
                                 <span className={cn(
-                                    "absolute -bottom-5 text-[10px] font-bold tracking-widest uppercase transition-colors flex items-center gap-1",
+                                    "absolute -bottom-5 text-[10px] font-bold tracking-widest uppercase transition-colors",
                                     isActive ? "text-accent" : "text-gray-500"
                                 )}>
-                                    {tab.label} <span className="text-[8px] bg-purple-600 text-white px-1 py-0.5 rounded-full">BETA</span>
+                                    {tab.label}
                                 </span>
                             </button>
                         );
