@@ -3,9 +3,11 @@ import { useNavigate } from 'react-router-dom';
 import { Sparkles, BrainCircuit, ArrowRight, RefreshCw, X } from 'lucide-react';
 import { useRegion } from '../contexts/RegionContext';
 import MovieCard from '../components/MovieCard';
+import { usePostHog } from 'posthog-js/react';
 
 const VibeCoder = () => {
   const { userRegion } = useRegion();
+  const posthog = usePostHog();
   const [prompt, setPrompt] = useState('');
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [result, setResult] = useState(null);
@@ -32,6 +34,13 @@ const VibeCoder = () => {
 
         if (!response.ok) throw new Error(data.error || "AI request failed");
         setResult(data.movie);
+
+        // Track AI Vibe Success
+        posthog?.capture('ai_vibe_generated', {
+            prompt: prompt,
+            movie: data.movie.title,
+            movie_id: data.movie.id
+        });
 
     } catch (err) {
         console.error("Vibe coding failed:", err);

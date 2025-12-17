@@ -7,6 +7,7 @@ import InstallPrompt from './components/InstallPrompt';
 
 import { RegionProvider } from './contexts/RegionContext';
 import RegionModal from './components/RegionModal';
+import PostHogPageviewTracker from './components/PostHogPageviewTracker';
 
 // Lazy Load Pages for Performance
 const Discover = lazy(() => import('./pages/Discover'));
@@ -30,6 +31,7 @@ function App() {
     <div className="bg-background text-text-primary min-h-screen font-sans">
       <RegionProvider>
         <Router>
+          <PostHogPageviewTracker />
           <SpeedInsights />
           <Analytics />
           <InstallPrompt />

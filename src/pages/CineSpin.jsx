@@ -6,10 +6,12 @@ import VibeSelector from '../components/VibeSelector';
 import { saveSpin } from '../utils/history';
 import { useRegion } from '../contexts/RegionContext';
 import { Sparkles, Dice5, ChevronLeft, Play, RefreshCw, AlertCircle } from 'lucide-react';
+import { usePostHog } from 'posthog-js/react';
 
 const CineSpin = () => {
   const location = useLocation();
   const { userRegion } = useRegion();
+  const posthog = usePostHog();
   const [result, setResult] = useState(null);
   const [resultDetails, setResultDetails] = useState(null);
   const [spinning, setSpinning] = useState(false);
@@ -98,6 +100,15 @@ const CineSpin = () => {
                 setSeenIds(prev => new Set(prev).add(winner.id));
                 
                 saveSpin(winner);
+
+                // Track Spin Success
+                posthog?.capture('spin_completed', {
+                    mood: selections.mood?.text,
+                    era: selections.era?.text,
+                    duration: selections.duration?.text,
+                    movie: winner.title,
+                    movie_id: winner.id
+                });
             } else {
                 throw new Error("No new movies found.");
             }
