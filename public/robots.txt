@@ -1,0 +1,10 @@
+# Allow all crawlers
+User-agent: *
+Allow: /
+
+# Allow Twitter/X bot specifically
+User-agent: Twitterbot
+Allow: /
+
+# Sitemap (optional, for SEO)
+Sitemap: https://cinequest.app/sitemap.xml
