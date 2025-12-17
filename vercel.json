@@ -5,11 +5,7 @@
       "destination": "/api/$1"
     },
     {
-      "source": "/og-image.png",
-      "destination": "/og-image.png"
-    },
-    {
-      "source": "/(.*)",
+      "source": "/((?!api/|og-image.png|favicon.ico|manifest.webmanifest|assets/).*)",
       "destination": "/index.html"
     }
   ]
