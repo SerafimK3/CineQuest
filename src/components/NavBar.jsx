@@ -26,8 +26,9 @@ const NavBar = () => {
 
           {/* Desktop Menu */}
           <div className="hidden md:flex items-center space-x-8">
-            <Link to="/chat" className="hover:text-accent transition font-bold flex items-center gap-1">
-                 <span className="text-purple-400">AI</span> Vibe
+            <Link to="/chat" className="hover:text-accent transition font-bold flex items-center gap-1 group">
+                 <span className="text-purple-400 group-hover:text-accent transition-colors">AI</span> Vibe
+                 <span className="text-[10px] bg-purple-600 text-white px-1.5 py-0.5 rounded-full ml-1 animate-pulse">BETA</span>
             </Link>
             <Link to="/discover" className="hover:text-accent transition">Discover</Link>
             <Link to="/games" className="hover:text-accent transition font-bold text-orange-400">Games</Link>
@@ -48,7 +49,9 @@ const NavBar = () => {
         <div className="md:hidden bg-surface border-t border-gray-700">
           <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3">
             <Link to="/" className="block px-3 py-2 rounded-md hover:bg-gray-700 hover:text-accent" onClick={() => setIsOpen(false)}>Spin (Home)</Link>
-            <Link to="/chat" className="block px-3 py-2 rounded-md hover:bg-gray-700 hover:text-accent" onClick={() => setIsOpen(false)}>Movie Oracle</Link>
+            <Link to="/chat" className="px-3 py-2 rounded-md hover:bg-gray-700 hover:text-accent flex items-center gap-2" onClick={() => setIsOpen(false)}>
+                Movie Oracle <span className="text-[10px] bg-purple-600 text-white px-1.5 py-0.5 rounded-full">BETA</span>
+            </Link>
             <Link to="/discover" className="block px-3 py-2 rounded-md hover:bg-gray-700 hover:text-accent" onClick={() => setIsOpen(false)}>Discover</Link>
             <Link to="/games" className="block px-3 py-2 rounded-md hover:bg-gray-700 text-orange-400 font-bold" onClick={() => setIsOpen(false)}>Games 🎮</Link>
             <Link to="/history" className="block px-3 py-2 rounded-md hover:bg-gray-700 text-gray-400" onClick={() => setIsOpen(false)}>History</Link>

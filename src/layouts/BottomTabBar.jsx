@@ -23,7 +23,7 @@ const BottomTabBar = () => {
 
     return (
         <nav className="fixed bottom-0 left-1/2 -translate-x-1/2 z-50 pb-safe-bottom bg-black/90 backdrop-blur-xl border-t border-x border-white/10 w-full max-w-lg md:rounded-t-3xl md:mb-4 shadow-2xl md:ring-1 md:ring-white/10 transition-all duration-500">
-            <div className="flex justify-around items-end h-20 w-full pb-2 px-2">
+            <div className="flex justify-around items-end h-24 w-full pb-6 px-2">
                 {tabs.map((tab) => {
                     const isActive = location.pathname === tab.path;
                     
@@ -47,10 +47,10 @@ const BottomTabBar = () => {
                                     />
                                 </div>
                                 <span className={cn(
-                                    "absolute -bottom-5 text-[10px] font-bold tracking-widest uppercase transition-colors",
+                                    "absolute -bottom-5 text-[10px] font-bold tracking-widest uppercase transition-colors flex items-center gap-1",
                                     isActive ? "text-accent" : "text-gray-500"
                                 )}>
-                                    {tab.label}
+                                    {tab.label} <span className="text-[8px] bg-purple-600 text-white px-1 py-0.5 rounded-full">BETA</span>
                                 </span>
                             </button>
                         );
