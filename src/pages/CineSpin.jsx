@@ -187,6 +187,9 @@ const CineSpin = () => {
                      <img 
                         src={getImageUrl(result.poster_path, 'w780')} 
                         alt={result.title}
+                        width="500"
+                        height="750"
+                        fetchPriority="high"
                         className="w-full h-full object-cover"
                      />
                      

@@ -119,10 +119,8 @@ const FilterBar = ({ onFilterChange }) => {
         'with_runtime.lte': maxRuntime,
         'vote_average.gte': minRating > 0 ? minRating : undefined,
         
-        // Changed Concept: Origin Country -> Watch Region
-        watch_region: selectedCountry || undefined, // Required for providers
-        with_watch_providers: selectedProviders.join('|') || undefined, // Pipe separated for OR logic
-        // We use OR (pipe) because usually users want "Movies on Netflix OR Hulu"
+        watch_region: selectedCountry || undefined, 
+        with_watch_providers: selectedProviders.join('|') || undefined,
         
         'primary_release_date.gte': yearFrom ? `${yearFrom}-01-01` : undefined,
         'primary_release_date.lte': yearTo ? `${yearTo}-12-31` : undefined,
@@ -132,7 +130,7 @@ const FilterBar = ({ onFilterChange }) => {
     }, 500);
 
     return () => clearTimeout(timer);
-  }, [selectedGenres, selectedProviders, minRuntime, maxRuntime, minRating, yearFrom, yearTo, selectedCountry, mediaType]);
+  }, [selectedGenres, selectedProviders, minRuntime, maxRuntime, minRating, yearFrom, yearTo, selectedCountry, mediaType, onFilterChange]);
 
   const handleGenreToggle = (genreId) => {
     const updated = selectedGenres.includes(genreId)

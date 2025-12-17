@@ -74,8 +74,11 @@ const MovieCard = ({ movie, type, enableSwipe = false, onSwipeLeft, onSwipeRight
               <img 
                 src={getImageUrl(movie.poster_path, 'w780')} 
                 alt={title} 
+                width="500"
+                height="750"
                 className={`w-full h-full object-cover pointer-events-none select-none transition-opacity duration-500 ${isImageLoaded ? 'opacity-100' : 'opacity-0'}`}
                 loading="lazy"
+                decoding="async"
                 onLoad={() => setIsImageLoaded(true)}
               />
             </>
