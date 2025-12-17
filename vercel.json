@@ -5,6 +5,10 @@
       "destination": "/api/$1"
     },
     {
+      "source": "/og-image.png",
+      "destination": "/og-image.png"
+    },
+    {
       "source": "/(.*)",
       "destination": "/index.html"
     }
