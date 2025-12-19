@@ -18,7 +18,7 @@ const SplashScreen = ({ onComplete }) => {
 
   return (
     <div 
-      className={`fixed inset-0 z-[9999] bg-black flex flex-col items-center justify-center transition-opacity duration-500 ${
+      className={`fixed inset-0 z-9999 bg-black flex flex-col items-center justify-center transition-opacity duration-500 ${
         phase === 'exit' ? 'opacity-0' : 'opacity-100'
       }`}
     >
@@ -47,7 +47,7 @@ const SplashScreen = ({ onComplete }) => {
         {/* Animated Loading Bar */}
         <div className="mt-8 w-48 h-1 bg-gray-800 rounded-full overflow-hidden mx-auto">
           <div 
-            className="h-full bg-gradient-to-r from-accent to-purple-500 rounded-full animate-pulse"
+            className="h-full bg-linear-to-r from-accent to-purple-500 rounded-full animate-pulse"
             style={{
               width: phase === 'enter' ? '0%' : '100%',
               transition: 'width 1.5s ease-out'

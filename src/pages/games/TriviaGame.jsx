@@ -11,7 +11,7 @@ const Trivia = () => {
   const [answered, setAnswered] = useState(false);
   const [selectedOption, setSelectedOption] = useState(null);
   const [isCorrect, setIsCorrect] = useState(false);
-  const [showResult, setShowResult] = useState(false);
+  // showResult state removed - not used
   const [showGameOver, setShowGameOver] = useState(false);
   const [finalStreak, setFinalStreak] = useState(0);
 
@@ -68,7 +68,8 @@ const Trivia = () => {
                 const words = correctFull.title.split(' ').filter(w => w.length > 3);
                 if (words.length > 0) {
                     const keyword = words.reduce((a, b) => a.length > b.length ? a : b); 
-                    const keywordMatches = await searchMovies(keyword);
+                    const keywordData = await searchMovies(keyword);
+                    const keywordMatches = keywordData?.results || [];
                     const validMatches = keywordMatches.filter(m => m.id !== correctFull.id && m.title !== correctFull.title);
                     distractorPool = [...distractorPool, ...validMatches];
                 }
@@ -172,7 +173,7 @@ const Trivia = () => {
     <div className="container mx-auto px-4 py-8 max-w-6xl">
       {/* Game Over Modal */}
       {showGameOver && (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/90 backdrop-blur-lg p-4 animate-in fade-in duration-300">
+        <div className="fixed inset-0 z-200 flex items-center justify-center bg-black/95 p-4 animate-in fade-in duration-300">
           <div className="w-full max-w-md bg-gray-900 border border-red-500/30 rounded-2xl shadow-2xl overflow-hidden text-center p-8">
             {/* Icon */}
             <div className="w-20 h-20 bg-red-500/20 rounded-full flex items-center justify-center mx-auto mb-6">

@@ -212,7 +212,7 @@ const CineSpin = () => {
                          <div className="flex flex-col gap-3">
                              {/* Watch Page (Internal) */}
                              <Link 
-                                to={`/movie/${result.id}`} 
+                                to={`/movie/${result.id}-${(result.title || '').toLowerCase().replace(/[^a-z0-9\s-]/g, '').replace(/\s+/g, '-')}`} 
                                 className="w-full py-4 bg-white text-black font-black uppercase tracking-widest rounded-xl hover:bg-accent transition-colors flex items-center justify-center gap-2"
                              >
                                  <Play fill="currentColor" size={18} /> View Details

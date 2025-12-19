@@ -56,7 +56,7 @@ const SwipableMovieCard = ({ movie, type, onSwipeLeft, onSwipeRight }) => {
     >
       <Link to={`/${mediaType}/${slug}`}>
         <div className="relative overflow-hidden rounded-lg shadow-lg bg-surface">
-          <div className="aspect-[2/3] w-full relative">
+          <div className="aspect-2/3 w-full relative">
             {movie.poster_path ? (
               <>
                 {!isImageLoaded && (

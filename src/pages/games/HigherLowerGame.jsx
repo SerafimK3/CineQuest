@@ -248,7 +248,7 @@ const HigherLowerGame = () => {
             </div>
 
              {/* Score Overlay */}
-             <div className="absolute top-4 right-4 z-30 bg-black/50 md:backdrop-blur-md px-4 py-2 md:px-6 md:py-3 rounded-xl md:rounded-2xl border border-white/10 text-right shadow-2xl">
+             <div className="absolute top-4 right-4 z-30 bg-black/80 px-4 py-2 md:px-6 md:py-3 rounded-xl md:rounded-2xl border border-white/10 text-right shadow-2xl">
                 <div className="text-[10px] md:text-xs text-gray-400 uppercase tracking-widest font-bold">Streak</div>
                 <div className="text-xl md:text-3xl font-black text-accent">{score}</div>
             </div>
