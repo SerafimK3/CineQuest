@@ -181,7 +181,7 @@ const Discover = () => {
                   <MovieCard 
                     key={movie.id} 
                     movie={movie} 
-                    type={filters.media_type === 'tv' ? 'tv' : 'movie'} 
+                    type={movie.media_type || (filters.media_type === 'tv' ? 'tv' : 'movie')} 
                   />
                 ))}
               </div>
