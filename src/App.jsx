@@ -1,9 +1,10 @@
-import React, { Suspense, lazy } from 'react';
+import React, { Suspense, lazy, useState } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { SpeedInsights } from "@vercel/speed-insights/react"
 import { Analytics } from "@vercel/analytics/react"
 import MobileLayout from './layouts/MobileLayout';
 import InstallPrompt from './components/InstallPrompt';
+import SplashScreen from './components/SplashScreen';
 
 import { RegionProvider } from './contexts/RegionContext';
 import RegionModal from './components/RegionModal';
@@ -27,6 +28,21 @@ const PageLoader = () => (
 );
 
 function App() {
+  // Splash screen only shows on first launch per session
+  const [showSplash, setShowSplash] = useState(() => {
+    return !sessionStorage.getItem('splash_shown');
+  });
+
+  const handleSplashComplete = () => {
+    sessionStorage.setItem('splash_shown', 'true');
+    setShowSplash(false);
+  };
+
+  // Show splash screen first
+  if (showSplash) {
+    return <SplashScreen onComplete={handleSplashComplete} />;
+  }
+
   return (
     <div className="bg-background text-text-primary min-h-screen font-sans">
       <RegionProvider>
