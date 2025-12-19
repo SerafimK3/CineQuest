@@ -5,7 +5,7 @@ import MovieCard from '../components/MovieCard';
 import VibeSelector from '../components/VibeSelector';
 import { saveSpin } from '../utils/history';
 import { useRegion } from '../contexts/RegionContext';
-import { Sparkles, Dice5, ChevronLeft, Play, RefreshCw, AlertCircle } from 'lucide-react';
+import { Sparkles, Dice5, ChevronLeft, Play, RefreshCw, AlertCircle, Film, Tv } from 'lucide-react';
 import { usePostHog } from 'posthog-js/react';
 
 const CineSpin = () => {
@@ -17,8 +17,10 @@ const CineSpin = () => {
   const [spinning, setSpinning] = useState(false);
   const [error, setError] = useState(null);
   
-  // New Vibe State
-  // New Vibe State
+  // Media Type State (movie or tv)
+  const [mediaType, setMediaType] = useState('movie');
+  
+  // Vibe State
   const [selections, setSelections] = useState({
       duration: null,
       era: null,
@@ -65,16 +67,22 @@ const CineSpin = () => {
             }
 
             // 2. Fetch with Retries for uniqueness
+            // Include regional availability filter
+            if (userRegion) {
+                apiFilters.watch_region = userRegion;
+                apiFilters.with_watch_monetization_types = 'flatrate|free|ads|rent|buy';
+            }
+            
             let winner = null;
             let attempts = 0;
             
             while (!winner && attempts < 3) {
                 const randomPage = Math.floor(Math.random() * 10) + 1;
-                let results = await discover('movie', { ...apiFilters, page: randomPage }, userRegion);
+                let results = await discover(mediaType, { ...apiFilters, page: randomPage }, userRegion);
                 
                 // Fallback page 1
                 if (!results || results.length === 0) {
-                    results = await discover('movie', { ...apiFilters, page: 1 }, userRegion);
+                    results = await discover(mediaType, { ...apiFilters, page: 1 }, userRegion);
                 }
 
                 if (results && results.length > 0) {
@@ -89,12 +97,12 @@ const CineSpin = () => {
             }
 
             if (winner) {
-                winner.media_type = 'movie';
+                winner.media_type = mediaType;
                 
                 // Fake Spin Delay
                 await new Promise(r => setTimeout(r, 1500));
                 
-                const details = await getDetails('movie', winner.id);
+                const details = await getDetails(mediaType, winner.id);
                 setResult(winner);
                 setResultDetails(details);
                 setSeenIds(prev => new Set(prev).add(winner.id));
@@ -165,6 +173,32 @@ const CineSpin = () => {
                     <p className="text-gray-400 text-lg lg:text-xl font-medium">Don't scroll. Just spin.</p>
                 </div>
 
+                {/* Media Type Toggle */}
+                <div className="flex justify-center mb-8 animate-in fade-in duration-500">
+                    <div className="bg-gray-900 rounded-full p-1 flex gap-1 border border-gray-800">
+                        <button
+                            onClick={() => setMediaType('movie')}
+                            className={`flex items-center gap-2 px-5 py-2.5 rounded-full font-bold text-sm transition-all ${
+                                mediaType === 'movie'
+                                    ? 'bg-accent text-black shadow-lg shadow-accent/30'
+                                    : 'text-gray-400 hover:text-white'
+                            }`}
+                        >
+                            <Film size={18} /> Movies
+                        </button>
+                        <button
+                            onClick={() => setMediaType('tv')}
+                            className={`flex items-center gap-2 px-5 py-2.5 rounded-full font-bold text-sm transition-all ${
+                                mediaType === 'tv'
+                                    ? 'bg-accent text-black shadow-lg shadow-accent/30'
+                                    : 'text-gray-400 hover:text-white'
+                            }`}
+                        >
+                            <Tv size={18} /> Series
+                        </button>
+                    </div>
+                </div>
+
                 <VibeSelector selections={selections} onSelect={handleVibeSelect} />
 
                 {error && (
@@ -212,7 +246,7 @@ const CineSpin = () => {
                          <div className="flex flex-col gap-3">
                              {/* Watch Page (Internal) */}
                              <Link 
-                                to={`/movie/${result.id}-${(result.title || '').toLowerCase().replace(/[^a-z0-9\s-]/g, '').replace(/\s+/g, '-')}`} 
+                                to={`/${mediaType}/${result.id}-${(result.title || result.name || '').toLowerCase().replace(/[^a-z0-9\s-]/g, '').replace(/\s+/g, '-')}`} 
                                 className="w-full py-4 bg-white text-black font-black uppercase tracking-widest rounded-xl hover:bg-accent transition-colors flex items-center justify-center gap-2"
                              >
                                  <Play fill="currentColor" size={18} /> View Details
