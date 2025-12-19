@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useLocation } from 'react-router-dom';
-import { getDetails, getImageUrl } from '../services/tmdb';
+import { getDetails, getImageUrl, parseIdFromSlug } from '../services/tmdb';
 import { useRegion } from '../contexts/RegionContext';
 import MovieCard from '../components/MovieCard';
+import SeasonEpisodes from '../components/SeasonEpisodes';
 import { Star, Clock, Calendar, Play, ChevronDown, Check, Search as SearchIcon } from 'lucide-react';
 
 
@@ -164,9 +165,12 @@ const ReviewCard = ({ review }) => {
 };
 
 const Details = () => {
-  const { id } = useParams();
+  const { id: slugId } = useParams();
   const location = useLocation();
-  const mediaType = location.pathname.includes('/tv/') ? 'tv' : 'movie'; // Determine type from URL
+  const mediaType = location.pathname.includes('/tv/') ? 'tv' : 'movie';
+  
+  // Parse actual ID from slug (e.g., "1398-the-sopranos" -> "1398")
+  const id = parseIdFromSlug(slugId);
 
   const { userRegion } = useRegion();
   const [movie, setMovie] = useState(null);
@@ -191,7 +195,7 @@ const Details = () => {
         setLoading(false);
       }
     };
-    fetchDetails();
+    if (id) fetchDetails();
   }, [id, mediaType]);
 
   if (loading) {
@@ -344,6 +348,11 @@ const Details = () => {
                 </div>
               )}
             </div>
+
+            {/* TV Show Episodes Browser */}
+            {mediaType === 'tv' && movie.seasons && (
+              <SeasonEpisodes tvId={id} seasons={movie.seasons} />
+            )}
           </div>
         </div>
 

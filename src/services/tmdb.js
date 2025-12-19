@@ -50,6 +50,30 @@ export const discoverWithPagination = async (type, params, region = null) => {
   };
 };
 
+// Get season details with episodes
+export const getSeasonDetails = async (tvId, seasonNumber) => {
+  const response = await tmdb.get(`/tv/${tvId}/season/${seasonNumber}`);
+  return response.data;
+};
+
+// Create URL-friendly slug from title
+export const createSlug = (title) => {
+  if (!title) return '';
+  return title
+    .toLowerCase()
+    .replace(/[^a-z0-9\s-]/g, '') // Remove special chars
+    .replace(/\s+/g, '-')         // Spaces to hyphens
+    .replace(/-+/g, '-')          // Multiple hyphens to single
+    .trim();
+};
+
+// Parse ID from slug URL (e.g., "1398-the-sopranos" -> "1398")
+export const parseIdFromSlug = (slug) => {
+  if (!slug) return null;
+  const match = slug.match(/^(\d+)/);
+  return match ? match[1] : slug;
+};
+
 // Helper to sort by Weighted Relevance
 // Logic: Rating (Quality) is the primary driver, with Structural Bonuses for exactness.
 const smartSort = (results, query) => {

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Star, Film } from 'lucide-react';
-import { getImageUrl } from '../services/tmdb';
+import { getImageUrl, createSlug } from '../services/tmdb';
 import { useSpring, animated } from '@react-spring/web';
 import { useDrag } from '@use-gesture/react';
 
@@ -48,6 +48,9 @@ const MovieCard = ({ movie, type, enableSwipe = false, onSwipeLeft, onSwipeRight
   const date = movie.release_date || movie.first_air_date;
   const year = date ? new Date(date).getFullYear() : 'N/A';
   const mediaType = type || movie.media_type || 'movie';
+  
+  // Generate slug URL: /movie/123-inception or /tv/1398-the-sopranos
+  const slug = `${movie.id}-${createSlug(title)}`;
 
   // Apply gestures only if enabled
   const AnimatedLink = enableSwipe ? animated(Link) : Link;
@@ -56,7 +59,7 @@ const MovieCard = ({ movie, type, enableSwipe = false, onSwipeLeft, onSwipeRight
 
   return (
     <AnimatedLink 
-        to={`/${mediaType}/${movie.id}`} 
+        to={`/${mediaType}/${slug}`} 
         className={`block group ${gone ? 'pointer-events-none' : ''}`}
         style={styleProps}
         {...gestureProps}
