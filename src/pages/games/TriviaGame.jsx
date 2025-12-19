@@ -12,6 +12,8 @@ const Trivia = () => {
   const [selectedOption, setSelectedOption] = useState(null);
   const [isCorrect, setIsCorrect] = useState(false);
   const [showResult, setShowResult] = useState(false);
+  const [showGameOver, setShowGameOver] = useState(false);
+  const [finalStreak, setFinalStreak] = useState(0);
 
   // Initialize Best Streak
   useEffect(() => {
@@ -144,8 +146,18 @@ const Trivia = () => {
 
     } else {
         setIsCorrect(false);
-        setSessionStreak(0);
+        setFinalStreak(sessionStreak);
+        // Show Game Over after a brief delay to show wrong answer
+        setTimeout(() => {
+            setShowGameOver(true);
+        }, 1000);
     }
+  };
+
+  const handleTryAgain = () => {
+    setShowGameOver(false);
+    setSessionStreak(0);
+    generateQuestion();
   };
 
   if (loading && !currentMovie) {
@@ -158,6 +170,52 @@ const Trivia = () => {
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-6xl">
+      {/* Game Over Modal */}
+      {showGameOver && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/90 backdrop-blur-lg p-4 animate-in fade-in duration-300">
+          <div className="w-full max-w-md bg-gray-900 border border-red-500/30 rounded-2xl shadow-2xl overflow-hidden text-center p-8">
+            {/* Icon */}
+            <div className="w-20 h-20 bg-red-500/20 rounded-full flex items-center justify-center mx-auto mb-6">
+              <XCircle className="text-red-500" size={48} />
+            </div>
+            
+            {/* Title */}
+            <h2 className="text-3xl font-black text-white mb-2">Game Over!</h2>
+            <p className="text-gray-400 mb-6">The correct answer was:</p>
+            <p className="text-xl font-bold text-accent mb-8">{currentMovie?.title}</p>
+            
+            {/* Stats */}
+            <div className="flex justify-center gap-6 mb-8">
+              <div className="text-center">
+                <p className="text-sm text-gray-500 uppercase tracking-wide mb-1">Your Streak</p>
+                <p className="text-4xl font-black text-white">{finalStreak}</p>
+              </div>
+              <div className="text-center">
+                <p className="text-sm text-yellow-500 uppercase tracking-wide mb-1">Best Streak</p>
+                <p className="text-4xl font-black text-yellow-500">{bestStreak}</p>
+              </div>
+            </div>
+            
+            {/* New Record Notice */}
+            {finalStreak > 0 && finalStreak >= bestStreak && (
+              <div className="bg-yellow-500/20 border border-yellow-500/30 rounded-xl p-3 mb-6">
+                <p className="text-yellow-400 font-bold flex items-center justify-center gap-2">
+                  <Crown size={18} /> New Record!
+                </p>
+              </div>
+            )}
+            
+            {/* Try Again Button */}
+            <button 
+              onClick={handleTryAgain}
+              className="bg-accent hover:bg-accent-hover text-black font-black text-lg py-4 px-10 rounded-full transition-all transform hover:scale-105 active:scale-95 shadow-lg shadow-accent/30"
+            >
+              Try Again
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Header Stats */}
       {/* Header Stats - Centered, No background */}
       <div className="flex justify-center items-center gap-6 mb-6">
