@@ -136,8 +136,8 @@ const CineSpin = () => {
       
       {/* Background Decor */}
       <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none z-0">
-          <div className="absolute top-[-20%] left-[-20%] w-[50%] h-[50%] bg-purple-600/20 rounded-full blur-[120px] animate-pulse-slow"></div>
-          <div className="absolute bottom-[-20%] right-[-20%] w-[50%] h-[50%] bg-pink-600/20 rounded-full blur-[120px] animate-pulse-slow delay-1000"></div>
+          <div className="absolute top-[-20%] left-[-20%] w-[50%] h-[50%] bg-purple-600/20 rounded-full blur-[60px]"></div>
+          <div className="absolute bottom-[-20%] right-[-20%] w-[50%] h-[50%] bg-pink-600/20 rounded-full blur-[60px] delay-1000"></div>
       </div>
 
       <div className="w-full max-w-4xl z-10 flex flex-col items-center">

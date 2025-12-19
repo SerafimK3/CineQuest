@@ -2,45 +2,11 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Star, Film } from 'lucide-react';
 import { getImageUrl, createSlug } from '../services/tmdb';
-import { useSpring, animated } from '@react-spring/web';
-import { useDrag } from '@use-gesture/react';
 
-const MovieCard = ({ movie, type, enableSwipe = false, onSwipeLeft, onSwipeRight }) => {
-  const [gone, setGone] = useState(false); // Track if card has been swiped away
+// Lightweight Card for non-swipable use (Discover, History grids)
+// No react-spring overhead - massive performance improvement
+const SimpleMovieCard = ({ movie, type }) => {
   const [isImageLoaded, setIsImageLoaded] = useState(false);
-
-  const [{ x, rot }, api] = useSpring(() => ({ 
-      x: 0, 
-      rot: 0, 
-      config: { friction: 50, tension: 200 } 
-  }));
-
-  const bind = useDrag(({ down, movement: [mx], velocity: [vx], direction: [xDir] }) => {
-      if (!enableSwipe || gone) return;
-
-      const trigger = vx > 0.2; // Velocity threshold
-      const dir = xDir < 0 ? -1 : 1; // Direction
-
-      if (!down && trigger && Math.abs(mx) > 50) {
-          // Swipe Triggered
-          setGone(true);
-          const isRight = dir === 1;
-          const endX = (200 + window.innerWidth) * dir;
-          
-          api.start({ x: endX, rot: dir * 10, config: { friction: 50, tension: 200 } });
-
-          // Callbacks
-          if (isRight && onSwipeRight) onSwipeRight();
-          if (!isRight && onSwipeLeft) onSwipeLeft();
-      } else {
-          // Dragging or Snap Back
-          api.start({ 
-              x: down ? mx : 0, 
-              rot: down ? mx / 20 : 0, 
-              immediate: down 
-          });
-      }
-  });
 
   if (!movie) return null;
 
@@ -48,27 +14,17 @@ const MovieCard = ({ movie, type, enableSwipe = false, onSwipeLeft, onSwipeRight
   const date = movie.release_date || movie.first_air_date;
   const year = date ? new Date(date).getFullYear() : 'N/A';
   const mediaType = type || movie.media_type || 'movie';
-  
-  // Generate slug URL: /movie/123-inception or /tv/1398-the-sopranos
   const slug = `${movie.id}-${createSlug(title)}`;
 
-  // Apply gestures only if enabled
-  const AnimatedLink = enableSwipe ? animated(Link) : Link;
-  const gestureProps = enableSwipe ? bind() : {};
-  const styleProps = enableSwipe ? { x, rotate: rot, touchAction: 'none' } : {};
-
   return (
-    <AnimatedLink 
+    <Link 
         to={`/${mediaType}/${slug}`} 
-        className={`block group ${gone ? 'pointer-events-none' : ''}`}
-        style={styleProps}
-        {...gestureProps}
+        className="block group"
     >
-      <div className={`relative overflow-hidden rounded-lg shadow-lg bg-surface transition ${!enableSwipe ? 'transform group-hover:scale-105' : ''}`}>
+      <div className="relative overflow-hidden rounded-lg shadow-lg bg-surface transition transform group-hover:scale-105">
         <div className="aspect-[2/3] w-full relative">
           {movie.poster_path ? (
             <>
-              {/* Skeleton Loader (Reduces CLS) */}
               {!isImageLoaded && (
                   <div className="absolute inset-0 bg-gray-800 animate-pulse flex items-center justify-center">
                       <Film className="text-gray-700 w-12 h-12" />
@@ -90,19 +46,6 @@ const MovieCard = ({ movie, type, enableSwipe = false, onSwipeLeft, onSwipeRight
               <span className="text-xs font-bold uppercase tracking-widest">No Image</span>
             </div>
           )}
-          
-          {/* Overlay Hints for Swipe */}
-          {enableSwipe && (
-              <>
-                <div className="absolute top-4 left-4 border-2 border-green-500 text-green-500 px-2 py-1 rounded font-black text-2xl uppercase opacity-0 -rotate-12 transition-opacity" style={{ opacity: x.to(val => (val > 50 ? val / 200 : 0)) }}>
-                    LIKE
-                </div>
-                <div className="absolute top-4 right-4 border-2 border-red-500 text-red-500 px-2 py-1 rounded font-black text-2xl uppercase opacity-0 rotate-12 transition-opacity" style={{ opacity: x.to(val => (val < -50 ? Math.abs(val) / 200 : 0)) }}>
-                    NOPE
-                </div>
-              </>
-          )}
-
         </div>
         <div className="absolute top-2 right-2 bg-black/70 px-2 py-1 rounded-md flex items-center space-x-1 text-yellow-400 text-sm font-bold">
           <Star size={14} fill="currentColor" />
@@ -113,8 +56,29 @@ const MovieCard = ({ movie, type, enableSwipe = false, onSwipeLeft, onSwipeRight
           <p className="text-text-secondary text-sm">{year}</p>
         </div>
       </div>
-    </AnimatedLink>
+    </Link>
   );
+};
+
+// Lazy load the heavy SwipableMovieCard only when needed
+const SwipableMovieCard = React.lazy(() => import('./SwipableMovieCard'));
+
+// Main Export - decides which card to render
+const MovieCard = ({ movie, type, enableSwipe = false, onSwipeLeft, onSwipeRight }) => {
+  if (enableSwipe) {
+    return (
+      <React.Suspense fallback={<SimpleMovieCard movie={movie} type={type} />}>
+        <SwipableMovieCard 
+          movie={movie} 
+          type={type} 
+          onSwipeLeft={onSwipeLeft} 
+          onSwipeRight={onSwipeRight} 
+        />
+      </React.Suspense>
+    );
+  }
+  
+  return <SimpleMovieCard movie={movie} type={type} />;
 };
 
 export default MovieCard;
