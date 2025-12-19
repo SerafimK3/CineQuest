@@ -4,13 +4,7 @@ import { ChevronDown, ChevronUp, Globe, Clock, Calendar, Star, Tv } from 'lucide
 import SearchableDropdown from './SearchableDropdown';
 import { useRegion } from '../contexts/RegionContext';
 
-// Countries with known active film industries/consumer base
-const RELEVANT_COUNTRY_CODES = [
-  'US', 'GB', 'FR', 'DE', 'JP', 'KR', 'IN', 'CN', 'ES', 'IT', 'CA', 'AU', 'BR', 'MX', 
-  'SE', 'DK', 'NO', 'NL', 'PL', 'RU', 'IE', 'GR', 'HK', 'TW', 'TH', 'ID', 'PH', 
-  'AR', 'CO', 'NZ', 'IR', 'TR', 'IL', 'EG', 'ZA', 'NG', 'BE', 'AT', 'CH', 'CZ',
-  'FI', 'HU', 'PT', 'RO', 'UA' 
-];
+// Note: We now fetch ALL countries from TMDB API (same as RegionModal)
 
 const FilterBar = ({ onFilterChange }) => {
   const { userRegion, changeRegion } = useRegion();
@@ -56,14 +50,13 @@ const FilterBar = ({ onFilterChange }) => {
   };
 
   useEffect(() => {
-    // 1. Fetch Static Data (Countries)
+    // 1. Fetch Static Data (Countries) - All countries from TMDB
     const fetchCountries = async () => {
       try {
         const countryList = await getCountries();
         
-        // Filter out countries without significant film output and sort
+        // Show ALL countries (same as RegionModal), sorted alphabetically
         const validCountries = countryList
-            .filter(c => RELEVANT_COUNTRY_CODES.includes(c.iso_3166_1))
             .sort((a, b) => a.english_name.localeCompare(b.english_name));
             
         setCountries(validCountries);
