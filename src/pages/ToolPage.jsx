@@ -75,8 +75,8 @@ const ToolPage = () => {
         <div className="flex-1 flex items-center justify-center p-4 relative overflow-hidden">
           {/* Background decoration */}
           <div className="absolute inset-0 z-0">
-            <div className={`absolute top-1/4 left-1/4 w-96 h-96 bg-linear-to-br ${tool.color} rounded-full blur-[120px] opacity-30`} />
-            <div className={`absolute bottom-1/4 right-1/4 w-80 h-80 bg-linear-to-br ${tool.color} rounded-full blur-[100px] opacity-20`} />
+            <div className={`absolute top-1/4 left-1/4 w-64 h-64 md:w-96 md:h-96 bg-linear-to-br ${tool.color} rounded-full blur-[60px] opacity-30`} />
+            <div className={`absolute bottom-1/4 right-1/4 w-48 h-48 md:w-80 md:h-80 bg-linear-to-br ${tool.color} rounded-full blur-[60px] opacity-20`} />
           </div>
 
           <div className="relative z-10 text-center max-w-2xl mx-auto">
