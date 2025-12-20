@@ -38,7 +38,6 @@ const VibeSelector = ({ selections, onSelect }) => {
   return (
     <div className="w-full max-w-2xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
       
-      {/* Duration */}
       <div className="space-y-3">
         <h3 className="text-gray-400 font-bold text-xs uppercase tracking-widest flex items-center gap-2">
            <Clock size={14} className="text-accent"/> How much time do we have?
@@ -48,7 +47,7 @@ const VibeSelector = ({ selections, onSelect }) => {
              <button
                 key={opt.id}
                 onClick={() => handleToggle('duration', opt)}
-                className={`px-4 py-3 rounded-2xl font-bold text-sm transition-all duration-300 transform hover:scale-105 active:scale-95 border ${
+                className={`px-4 py-3 rounded-2xl font-bold text-sm transition-colors duration-200 border ${
                    selections.duration?.id === opt.id 
                    ? 'bg-accent text-black border-accent shadow-[0_0_15px_rgba(0,229,255,0.4)]' 
                    : 'bg-gray-900 text-gray-400 border-gray-800 hover:border-gray-600 hover:text-white'
@@ -70,7 +69,7 @@ const VibeSelector = ({ selections, onSelect }) => {
              <button
                 key={opt.id}
                 onClick={() => handleToggle('era', opt)}
-                className={`px-4 py-3 rounded-2xl font-bold text-sm transition-all duration-300 transform hover:scale-105 active:scale-95 border ${
+                className={`px-4 py-3 rounded-2xl font-bold text-sm transition-colors duration-200 border ${
                    selections.era?.id === opt.id 
                    ? 'bg-purple-500 text-white border-purple-500 shadow-[0_0_15px_rgba(168,85,247,0.4)]' 
                    : 'bg-gray-900 text-gray-400 border-gray-800 hover:border-gray-600 hover:text-white'
@@ -92,7 +91,7 @@ const VibeSelector = ({ selections, onSelect }) => {
              <button
                 key={opt.id}
                 onClick={() => handleToggle('mood', opt)}
-                className={`px-4 py-3 rounded-2xl font-bold text-sm transition-all duration-300 transform hover:scale-105 active:scale-95 border ${
+                className={`px-4 py-3 rounded-2xl font-bold text-sm transition-colors duration-200 border ${
                    selections.mood?.id === opt.id 
                    ? 'bg-pink-500 text-white border-pink-500 shadow-[0_0_15px_rgba(236,72,153,0.4)]' 
                    : 'bg-gray-900 text-gray-400 border-gray-800 hover:border-gray-600 hover:text-white'

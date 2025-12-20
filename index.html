@@ -10,6 +10,41 @@
     <meta name="description" content="Discover trending movies, spin for random picks, and test your knowledge with movie trivia. CineQuest is the ultimate app for film lovers." />
     <meta name="theme-color" content="#000000" />
     
+    <!-- Preconnect to external domains for faster loading -->
+    <link rel="preconnect" href="https://api.themoviedb.org" />
+    <link rel="preconnect" href="https://image.tmdb.org" />
+    <link rel="dns-prefetch" href="https://api.themoviedb.org" />
+    <link rel="dns-prefetch" href="https://image.tmdb.org" />
+    
+    <!-- Preload critical fonts to prevent FOIT/FOUT -->
+    <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" media="print" onload="this.media='all'" />
+    <noscript>
+      <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" />
+    </noscript>
+    
+    <!-- Inline critical CSS to prevent layout shift -->
+    <style>
+      /* Prevent flash of unstyled content */
+      html { background-color: #000000; }
+      body { 
+        margin: 0; 
+        background-color: #000000; 
+        color: #FFFFFF; 
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      }
+      /* Reserve space for navbar on desktop (64px) */
+      @media (min-width: 768px) {
+        body { min-height: 100vh; }
+      }
+      /* Reserve space for bottom nav on mobile (96px) */
+      @media (max-width: 767px) {
+        body { padding-bottom: 96px; }
+      }
+      /* Prevent CLS from root mounting */
+      #root { min-height: 100vh; background-color: #000000; }
+    </style>
+    
     <!-- Open Graph / Facebook / LinkedIn / Discord / iMessage -->
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="CineQuest" />
