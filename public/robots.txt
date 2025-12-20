@@ -2,9 +2,12 @@
 User-agent: *
 Allow: /
 
-# Allow Twitter/X bot specifically
+# Explicitly allow Twitter
 User-agent: Twitterbot
 Allow: /
+
+# Sitemap
+Sitemap: https://cinequest.app/sitemap.xml
 
 # Sitemap (optional, for SEO)
 Sitemap: https://cinequest.app/sitemap.xml

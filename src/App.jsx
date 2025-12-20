@@ -20,6 +20,11 @@ const GamesHub = lazy(() => import('./pages/games/GamesHub'));
 const TriviaGame = lazy(() => import('./pages/games/TriviaGame'));
 const HigherLowerGame = lazy(() => import('./pages/games/HigherLowerGame'));
 
+// SEO Landing Pages
+const LikeMoviePage = lazy(() => import('./pages/LikeMoviePage'));
+const PlatformPage = lazy(() => import('./pages/PlatformPage'));
+const ToolPage = lazy(() => import('./pages/ToolPage'));
+
 // Loading Fallback
 const PageLoader = () => (
   <div className="flex items-center justify-center min-h-screen bg-background">
@@ -55,20 +60,33 @@ function App() {
           <MobileLayout>
           <Suspense fallback={<PageLoader />}>
             <Routes>
+              {/* Main App Routes */}
               <Route path="/" element={<CineSpin />} />
               <Route path="/chat" element={<VibeCoder />} />
               <Route path="/history" element={<SpinHistory />} />
-              
               <Route path="/discover" element={<Discover />} />
-              {/* Search Route Removed - Legacy */}
               
               {/* Games Routes */}
               <Route path="/games" element={<GamesHub />} />
               <Route path="/games/trivia" element={<TriviaGame />} />
               <Route path="/games/higher-lower" element={<HigherLowerGame />} />
               
+              {/* Details Routes */}
               <Route path="/movie/:id" element={<Details />} />
               <Route path="/tv/:id" element={<Details />} />
+              
+              {/* SEO Landing Pages - Bucket C: "Movies Like X" */}
+              <Route path="/like/:slug" element={<LikeMoviePage />} />
+              
+              {/* SEO Landing Pages - Bucket B: Platform-Specific */}
+              <Route path="/netflix/:slug" element={<PlatformPage />} />
+              <Route path="/disney/:slug" element={<PlatformPage />} />
+              <Route path="/prime/:slug" element={<PlatformPage />} />
+              <Route path="/hbo/:slug" element={<PlatformPage />} />
+              <Route path="/apple/:slug" element={<PlatformPage />} />
+              
+              {/* SEO Landing Pages - Bucket A: Tools */}
+              <Route path="/tools/:slug" element={<ToolPage />} />
             </Routes>
           </Suspense>
         </MobileLayout>
