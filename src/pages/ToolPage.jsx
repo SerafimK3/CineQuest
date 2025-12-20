@@ -97,7 +97,7 @@ const ToolPage = () => {
 
             {/* CTA Button */}
             <Link 
-              to="/"
+              to="/chat"
               state={{ prefilledPrompt: tool.prompt }}
               className={`inline-flex items-center gap-3 bg-linear-to-r ${tool.color} text-white font-black text-xl px-10 py-5 rounded-full hover:scale-105 transition-transform shadow-2xl`}
             >

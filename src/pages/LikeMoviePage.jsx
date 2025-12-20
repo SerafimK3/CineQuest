@@ -101,7 +101,7 @@ const LikeMoviePage = () => {
 
             {/* CTA to Spin */}
             <Link 
-              to="/" 
+              to="/chat" 
               state={{ prefilledPrompt: `Movies with the exact same vibe as ${movieName}` }}
               className="inline-flex items-center gap-3 bg-linear-to-r from-accent to-purple-600 text-black font-black text-lg px-8 py-4 rounded-full hover:scale-105 transition-transform shadow-lg shadow-accent/30"
             >
@@ -165,7 +165,7 @@ const LikeMoviePage = () => {
           <div className="text-center mt-12">
             <p className="text-gray-400 mb-4">Want more personalized recommendations?</p>
             <Link 
-              to="/"
+              to="/chat"
               className="inline-flex items-center gap-2 bg-gray-800 hover:bg-gray-700 text-white font-bold px-6 py-3 rounded-full transition-colors"
             >
               <RefreshCw size={18} />

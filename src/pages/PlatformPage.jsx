@@ -146,7 +146,7 @@ const PlatformPage = () => {
 
             {/* CTA */}
             <Link 
-              to="/"
+              to="/chat"
               state={{ prefilledPrompt: `${categoryText} on ${platformConfig.name}` }}
               className="inline-flex items-center gap-3 bg-white text-black font-black text-lg px-8 py-4 rounded-full hover:scale-105 transition-transform"
             >
