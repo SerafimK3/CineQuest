@@ -1,11 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { getSeasonDetails, getImageUrl } from '../services/tmdb';
-import { Play, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Play, ChevronDown } from 'lucide-react';
+import useIsMobile from '../hooks/useIsMobile';
 
 const SeasonEpisodes = ({ tvId, seasons }) => {
   const [selectedSeason, setSelectedSeason] = useState(1);
   const [episodes, setEpisodes] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [showAll, setShowAll] = useState(false);
+  const isMobile = useIsMobile();
 
   // Filter out specials (season 0) and sort
   const validSeasons = seasons
@@ -17,6 +20,7 @@ const SeasonEpisodes = ({ tvId, seasons }) => {
       if (!tvId || !selectedSeason) return;
       
       setLoading(true);
+      setShowAll(false); // Reset when changing season
       try {
         const data = await getSeasonDetails(tvId, selectedSeason);
         setEpisodes(data.episodes || []);
@@ -31,6 +35,19 @@ const SeasonEpisodes = ({ tvId, seasons }) => {
   }, [tvId, selectedSeason]);
 
   if (!validSeasons.length) return null;
+
+  // Responsive initial limit
+  // Phone: 4, Tablet: 6, Desktop: 8
+  const getInitialLimit = () => {
+    if (typeof window === 'undefined') return 8;
+    if (window.innerWidth < 640) return 4;      // Phone
+    if (window.innerWidth < 1024) return 6;     // Tablet
+    return 8;                                    // Desktop
+  };
+
+  const initialLimit = getInitialLimit();
+  const displayedEpisodes = showAll ? episodes : episodes.slice(0, initialLimit);
+  const hasMore = episodes.length > initialLimit;
 
   return (
     <div className="mt-8">
@@ -65,62 +82,77 @@ const SeasonEpisodes = ({ tvId, seasons }) => {
       ) : episodes.length === 0 ? (
         <p className="text-gray-500 text-center py-8">No episodes available for this season.</p>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-          {episodes.map(episode => (
-            <div 
-              key={episode.id} 
-              className="bg-surface rounded-xl overflow-hidden border border-gray-800 hover:border-gray-600 transition-colors group"
-            >
-              {/* Episode Thumbnail */}
-              <div className="relative aspect-video bg-gray-900">
-                {episode.still_path ? (
-                  <img
-                    src={getImageUrl(episode.still_path, 'w500')}
-                    alt={episode.name}
-                    className="w-full h-full object-cover"
-                    loading="lazy"
-                  />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center bg-gray-800">
-                    <Play className="text-gray-600" size={32} />
+        <>
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+            {displayedEpisodes.map(episode => (
+              <div 
+                key={episode.id} 
+                className="bg-surface rounded-xl overflow-hidden border border-gray-800 hover:border-gray-600 transition-colors group"
+              >
+                {/* Episode Thumbnail */}
+                <div className="relative aspect-video bg-gray-900">
+                  {episode.still_path ? (
+                    <img
+                      src={getImageUrl(episode.still_path, 'w500')}
+                      alt={episode.name}
+                      className="w-full h-full object-cover"
+                      loading="lazy"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center bg-gray-800">
+                      <Play className="text-gray-600" size={32} />
+                    </div>
+                  )}
+                  {/* Episode Number Badge */}
+                  <div className="absolute top-2 left-2 bg-black/70 px-2 py-1 rounded text-xs font-bold text-white">
+                    E{episode.episode_number}
                   </div>
-                )}
-                {/* Episode Number Badge */}
-                <div className="absolute top-2 left-2 bg-black/70 px-2 py-1 rounded text-xs font-bold text-white">
-                  E{episode.episode_number}
+                  {/* Runtime Badge */}
+                  {episode.runtime && (
+                    <div className="absolute bottom-2 right-2 bg-black/70 px-2 py-1 rounded text-xs text-gray-300">
+                      {episode.runtime}m
+                    </div>
+                  )}
                 </div>
-                {/* Runtime Badge */}
-                {episode.runtime && (
-                  <div className="absolute bottom-2 right-2 bg-black/70 px-2 py-1 rounded text-xs text-gray-300">
-                    {episode.runtime}m
-                  </div>
-                )}
-              </div>
 
-              {/* Episode Info */}
-              <div className="p-3">
-                <h4 className="font-bold text-text-primary text-sm mb-1 line-clamp-1 group-hover:text-accent transition-colors">
-                  {episode.name}
-                </h4>
-                {episode.overview && (
-                  <p className="text-gray-500 text-xs line-clamp-2">
-                    {episode.overview}
-                  </p>
-                )}
-                {/* Air Date */}
-                {episode.air_date && (
-                  <p className="text-gray-600 text-xs mt-2">
-                    {new Date(episode.air_date).toLocaleDateString('en-US', {
-                      year: 'numeric',
-                      month: 'short',
-                      day: 'numeric'
-                    })}
-                  </p>
-                )}
+                {/* Episode Info */}
+                <div className="p-3">
+                  <h4 className="font-bold text-text-primary text-sm mb-1 line-clamp-1 group-hover:text-accent transition-colors">
+                    {episode.name}
+                  </h4>
+                  {episode.overview && (
+                    <p className="text-gray-500 text-xs line-clamp-2">
+                      {episode.overview}
+                    </p>
+                  )}
+                  {/* Air Date */}
+                  {episode.air_date && (
+                    <p className="text-gray-600 text-xs mt-2">
+                      {new Date(episode.air_date).toLocaleDateString('en-US', {
+                        year: 'numeric',
+                        month: 'short',
+                        day: 'numeric'
+                      })}
+                    </p>
+                  )}
+                </div>
               </div>
+            ))}
+          </div>
+
+          {/* Show All Button */}
+          {hasMore && !showAll && (
+            <div className="flex justify-center mt-6">
+              <button
+                onClick={() => setShowAll(true)}
+                className="flex items-center gap-2 px-6 py-3 bg-gray-800 hover:bg-gray-700 text-white font-bold rounded-full transition-all hover:scale-105 border border-gray-700"
+              >
+                <ChevronDown size={20} />
+                Show All {episodes.length} Episodes
+              </button>
             </div>
-          ))}
-        </div>
+          )}
+        </>
       )}
     </div>
   );
