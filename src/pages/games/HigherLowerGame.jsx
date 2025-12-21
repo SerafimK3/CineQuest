@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { getTrending, getImageUrl } from '../../services/tmdb';
+import { getTrending, getImageUrl, getDetails } from '../../services/tmdb';
 import { ArrowUp, ArrowDown, RefreshCcw, Trophy, Check, X as XIcon } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
@@ -52,17 +52,31 @@ const HigherLowerGame = () => {
             ]);
 
             const combined = [...data1, ...data2];
-            // Filter 0 ratings and Shuffle
-            const validMovies = combined.filter(m => m.vote_count > 0 && m.poster_path);
-            const shuffled = validMovies.sort(() => 0.5 - Math.random());
+            // Filter valid movies with posters
+            const validMovies = combined.filter(m => m.poster_path);
+            const shuffled = validMovies.sort(() => 0.5 - Math.random()).slice(0, 10);
+            
+            // Fetch details (including revenue) for each movie in parallel
+            const moviesWithDetails = await Promise.all(
+                shuffled.map(async (m) => {
+                    try {
+                        const details = await getDetails('movie', m.id);
+                        return { ...m, revenue: details.revenue || 0 };
+                    } catch {
+                        return { ...m, revenue: 0 };
+                    }
+                })
+            );
+            
+            // Filter only movies with significant box office ($10M+)
+            const moviesWithRevenue = moviesWithDetails.filter(m => m.revenue >= 10000000);
             
             if (isRestart) {
-                setMovies(shuffled);
+                setMovies(moviesWithRevenue);
             } else {
                 setMovies(prev => {
-                    // Prevent duplicates when appending
                     const existingIds = new Set(prev.map(m => m.id));
-                    const newMovies = shuffled.filter(m => !existingIds.has(m.id));
+                    const newMovies = moviesWithRevenue.filter(m => !existingIds.has(m.id));
                     return [...prev, ...newMovies];
                 });
             }
@@ -70,8 +84,6 @@ const HigherLowerGame = () => {
             setGameState(prev => prev === 'sliding' ? 'sliding' : 'idle');
         } catch (error) {
             console.error(error);
-            // If failed, try again or show error (for now silent retry could loop, let's just stick to error log)
-            // Ideally we'd set an error state here.
         }
     };
 
@@ -99,8 +111,8 @@ const HigherLowerGame = () => {
         const currentCheck = movies[0];
         const nextCheck = movies[1];
         
-        // Use Vote Count (Fame) instead of Popularity (Trending)
-        const isHigher = nextCheck.vote_count >= currentCheck.vote_count;
+        // Use Box Office Revenue for comparison
+        const isHigher = nextCheck.revenue >= currentCheck.revenue;
         const isCorrect = (guess === 'higher' && isHigher) || (guess === 'lower' && !isHigher);
 
         setGameState('revealing');
@@ -188,9 +200,9 @@ const HigherLowerGame = () => {
                                 {/* 1. Result State (Current Movie or Revealed Next) */}
                                 {(isCurrent || (isNext && result)) && (
                                     <div className="text-xl md:text-3xl text-accent font-bold animate-in zoom-in duration-300">
-                                        <span className="text-gray-300 text-sm md:text-lg block mb-1 font-normal uppercase tracking-widest opacity-80">Total User Ratings</span>
+                                        <span className="text-gray-300 text-sm md:text-lg block mb-1 font-normal uppercase tracking-widest opacity-80">Box Office Revenue</span>
                                         <div className="text-4xl md:text-6xl drop-shadow-[0_0_10px_rgba(0,229,255,0.5)]">
-                                            {isNext && gameState === 'revealing' ? <CountUp end={movie.vote_count} /> : movie.vote_count.toLocaleString()}
+                                            ${isNext && gameState === 'revealing' ? <CountUp end={Math.round(movie.revenue / 1000000)} /> : Math.round(movie.revenue / 1000000).toLocaleString()}M
                                         </div>
                                          {isNext && result === 'correct' && (
                                             <div className="flex items-center justify-center gap-2 text-green-400 font-bold text-lg mt-2 animate-bounce">
@@ -217,7 +229,7 @@ const HigherLowerGame = () => {
                                                 <ArrowUp className="w-6 h-6 md:w-8 md:h-8 group-hover:-translate-y-1 transition-transform" strokeWidth={3} /> 
                                                 HIGHER
                                             </button>
-                                            <span className="text-[10px] md:text-xs tracking-[0.3em] uppercase opacity-50 font-bold">Total Ratings</span>
+                                            <span className="text-[10px] md:text-xs tracking-[0.3em] uppercase opacity-50 font-bold">Box Office</span>
                                             <button 
                                                 onClick={() => handleGuess('lower')}
                                                 className="group bg-transparent border-4 border-red-500 hover:bg-red-500 text-white font-black text-lg md:text-2xl py-3 md:py-4 rounded-full transition-all duration-300 flex items-center justify-center gap-3 hover:scale-105 active:scale-95 w-full"
