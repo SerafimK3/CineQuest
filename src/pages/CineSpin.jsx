@@ -20,11 +20,12 @@ const CineSpin = () => {
   // Media Type State (movie or tv)
   const [mediaType, setMediaType] = useState('movie');
   
-  // Vibe State
+  // Vibe State - includes all filter categories
   const [selections, setSelections] = useState({
-      duration: null,
-      era: null,
-      mood: null
+      duration: null,    // Movies only
+      status: null,      // TV only  
+      era: null,         // Both
+      genre: null        // Both
   });
   const [seenIds, setSeenIds] = useState(new Set()); // Track session duplicates
 
@@ -61,9 +62,30 @@ const CineSpin = () => {
             if (customFilters && Object.keys(customFilters).length > 0) {
                 Object.assign(apiFilters, customFilters);
             } else {
-                if (selections.duration) Object.assign(apiFilters, selections.duration.value);
-                if (selections.era) Object.assign(apiFilters, selections.era.value);
-                if (selections.mood) Object.assign(apiFilters, selections.mood.value);
+                // Movie filters
+                if (mediaType === 'movie' && selections.duration) {
+                    Object.assign(apiFilters, selections.duration.value);
+                }
+                // TV filters
+                if (mediaType === 'tv' && selections.status) {
+                    Object.assign(apiFilters, selections.status.value);
+                }
+                // Shared filters
+                if (selections.era) {
+                    // Only use the relevant date field for the media type
+                    const eraFilters = {};
+                    if (mediaType === 'movie') {
+                        if (selections.era.value['primary_release_date.gte']) eraFilters['primary_release_date.gte'] = selections.era.value['primary_release_date.gte'];
+                        if (selections.era.value['primary_release_date.lte']) eraFilters['primary_release_date.lte'] = selections.era.value['primary_release_date.lte'];
+                    } else {
+                        if (selections.era.value['first_air_date.gte']) eraFilters['first_air_date.gte'] = selections.era.value['first_air_date.gte'];
+                        if (selections.era.value['first_air_date.lte']) eraFilters['first_air_date.lte'] = selections.era.value['first_air_date.lte'];
+                    }
+                    Object.assign(apiFilters, eraFilters);
+                }
+                if (selections.genre) {
+                    Object.assign(apiFilters, selections.genre.value);
+                }
             }
 
             // 2. Fetch with Retries for uniqueness
@@ -111,10 +133,12 @@ const CineSpin = () => {
 
                 // Track Spin Success
                 posthog?.capture('spin_completed', {
-                    mood: selections.mood?.text,
-                    era: selections.era?.text,
-                    duration: selections.duration?.text,
-                    movie: winner.title,
+                    genre: selections.genre?.id,
+                    era: selections.era?.id,
+                    duration: selections.duration?.id,
+                    status: selections.status?.id,
+                    mediaType: mediaType,
+                    movie: winner.title || winner.name,
                     movie_id: winner.id
                 });
             } else {
@@ -134,9 +158,17 @@ const CineSpin = () => {
       setResult(null);
       setResultDetails(null);
       setError(null);
-      // Clear filters and history for a fresh start
-      setSelections({ duration: null, era: null, mood: null }); 
+      // Clear all filters and history for a fresh start
+      setSelections({ duration: null, status: null, era: null, genre: null }); 
       setSeenIds(new Set()); 
+  };
+
+  // Reset selections when switching media type
+  const handleMediaTypeChange = (newType) => {
+      if (newType !== mediaType) {
+          setMediaType(newType);
+          setSelections({ duration: null, status: null, era: null, genre: null });
+      }
   };
 
   return (
@@ -177,7 +209,7 @@ const CineSpin = () => {
                 <div className="flex justify-center mb-8 animate-in fade-in duration-500">
                     <div className="bg-gray-900 rounded-full p-1 flex gap-1 border border-gray-800">
                         <button
-                            onClick={() => setMediaType('movie')}
+                            onClick={() => handleMediaTypeChange('movie')}
                             className={`flex items-center gap-2 px-5 py-2.5 rounded-full font-bold text-sm transition-all ${
                                 mediaType === 'movie'
                                     ? 'bg-accent text-black shadow-lg shadow-accent/30'
@@ -187,7 +219,7 @@ const CineSpin = () => {
                             <Film size={18} /> Movies
                         </button>
                         <button
-                            onClick={() => setMediaType('tv')}
+                            onClick={() => handleMediaTypeChange('tv')}
                             className={`flex items-center gap-2 px-5 py-2.5 rounded-full font-bold text-sm transition-all ${
                                 mediaType === 'tv'
                                     ? 'bg-accent text-black shadow-lg shadow-accent/30'
