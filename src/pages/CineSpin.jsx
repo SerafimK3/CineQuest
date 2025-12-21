@@ -199,7 +199,7 @@ const CineSpin = () => {
                     </div>
                 </div>
 
-                <VibeSelector selections={selections} onSelect={handleVibeSelect} />
+                <VibeSelector selections={selections} onSelect={handleVibeSelect} mediaType={mediaType} />
 
                 {error && (
                     <div className="mt-8 p-4 bg-red-500/10 border border-red-500/50 rounded-xl text-red-200 flex items-center gap-2 animate-in slide-in-from-bottom-2">

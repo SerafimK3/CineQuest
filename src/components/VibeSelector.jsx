@@ -22,7 +22,7 @@ const VIBE_OPTIONS = {
   ]
 };
 
-const VibeSelector = ({ selections, onSelect }) => {
+const VibeSelector = ({ selections, onSelect, mediaType = 'movie' }) => {
   
   const handleToggle = (category, option) => {
     // Single select per category for simplicity, or toggle?
@@ -38,26 +38,29 @@ const VibeSelector = ({ selections, onSelect }) => {
   return (
     <div className="w-full max-w-2xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
       
-      <div className="space-y-3">
-        <h3 className="text-gray-400 font-bold text-xs uppercase tracking-widest flex items-center gap-2">
-           <Clock size={14} className="text-accent"/> How much time do we have?
-        </h3>
-        <div className="flex flex-wrap gap-3">
-           {VIBE_OPTIONS.duration.map(opt => (
-             <button
-                key={opt.id}
-                onClick={() => handleToggle('duration', opt)}
-                className={`px-4 py-3 rounded-2xl font-bold text-sm transition-colors duration-200 border ${
-                   selections.duration?.id === opt.id 
-                   ? 'bg-accent text-black border-accent shadow-[0_0_15px_rgba(0,229,255,0.4)]' 
-                   : 'bg-gray-900 text-gray-400 border-gray-800 hover:border-gray-600 hover:text-white'
-                }`}
-             >
-                {opt.label}
-             </button>
-           ))}
+      {/* Duration - Only show for Movies */}
+      {mediaType === 'movie' && (
+        <div className="space-y-3">
+          <h3 className="text-gray-400 font-bold text-xs uppercase tracking-widest flex items-center gap-2">
+             <Clock size={14} className="text-accent"/> How much time do we have?
+          </h3>
+          <div className="flex flex-wrap gap-3">
+             {VIBE_OPTIONS.duration.map(opt => (
+               <button
+                  key={opt.id}
+                  onClick={() => handleToggle('duration', opt)}
+                  className={`px-4 py-3 rounded-2xl font-bold text-sm transition-colors duration-200 border ${
+                     selections.duration?.id === opt.id 
+                     ? 'bg-accent text-black border-accent shadow-[0_0_15px_rgba(0,229,255,0.4)]' 
+                     : 'bg-gray-900 text-gray-400 border-gray-800 hover:border-gray-600 hover:text-white'
+                  }`}
+               >
+                  {opt.label}
+               </button>
+             ))}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Era */}
       <div className="space-y-3">
