@@ -4,6 +4,7 @@ import { getDetails, getImageUrl, parseIdFromSlug } from '../services/tmdb';
 import { useRegion } from '../contexts/RegionContext';
 import MovieCard from '../components/MovieCard';
 import SeasonEpisodes from '../components/SeasonEpisodes';
+import AdBanner from '../components/AdBanner';
 import { Star, Clock, Calendar, Play, ChevronDown, Check, Search as SearchIcon } from 'lucide-react';
 
 
@@ -355,6 +356,9 @@ const Details = () => {
             )}
           </div>
         </div>
+
+        {/* Ad Banner - After main content */}
+        <AdBanner className="mt-8" />
 
         {/* Full Width Sections */}
         <div className="mt-12 space-y-12">
