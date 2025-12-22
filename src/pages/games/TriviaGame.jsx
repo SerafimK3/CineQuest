@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { getTrending, getImageUrl, searchMovies, getDetails, discover } from '../../services/tmdb';
 import { Trophy, CheckCircle, XCircle, ChevronRight, Crown } from 'lucide-react';
+import AdBanner from '../../components/AdBanner';
 
 const Trivia = () => {
   const [loading, setLoading] = useState(true);
@@ -14,6 +15,7 @@ const Trivia = () => {
   // showResult state removed - not used
   const [showGameOver, setShowGameOver] = useState(false);
   const [finalStreak, setFinalStreak] = useState(0);
+  const [showAd, setShowAd] = useState(false);
 
   // Initialize Best Streak
   useEffect(() => {
@@ -148,8 +150,14 @@ const Trivia = () => {
     } else {
         setIsCorrect(false);
         setFinalStreak(sessionStreak);
+        // Track game over count for ad display (every 3rd)
+        const currentCount = parseInt(sessionStorage.getItem('triviaGameOverCount') || '0');
+        const newCount = currentCount + 1;
+        sessionStorage.setItem('triviaGameOverCount', newCount.toString());
+        const shouldShowAd = newCount % 3 === 0; // Show ad every 3rd game over
         // Show Game Over after a brief delay to show wrong answer
         setTimeout(() => {
+            setShowAd(shouldShowAd);
             setShowGameOver(true);
         }, 1000);
     }
@@ -199,11 +207,18 @@ const Trivia = () => {
             
             {/* New Record Notice */}
             {finalStreak > 0 && finalStreak >= bestStreak && (
-              <div className="bg-yellow-500/20 border border-yellow-500/30 rounded-xl p-3 mb-6">
+              <div className="bg-yellow-500/20 border border-yellow-500/30 rounded-xl p-3 mb-4">
                 <p className="text-yellow-400 font-bold flex items-center justify-center gap-2">
                   <Crown size={18} /> New Record!
                 </p>
               </div>
+            )}
+            
+            {/* Ad Banner - Shows every 3rd game over */}
+            {showAd && (
+                <div className="w-full max-w-md px-4 mb-4">
+                    <AdBanner />
+                </div>
             )}
             
             {/* Try Again Button */}

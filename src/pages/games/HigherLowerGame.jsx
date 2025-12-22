@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { getTrending, getImageUrl, getDetails } from '../../services/tmdb';
 import { ArrowUp, ArrowDown, RefreshCcw, Trophy, Check, X as XIcon } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import AdBanner from '../../components/AdBanner';
 
 const CountUp = ({ end, duration = 1000 }) => {
     const [count, setCount] = useState(0);
@@ -38,6 +39,7 @@ const HigherLowerGame = () => {
     const [score, setScore] = useState(0);
     const [topScore, setTopScore] = useState(() => parseInt(localStorage.getItem('higherLowerTopScore')) || 0);
     const [result, setResult] = useState(null); // 'correct' | 'wrong'
+    const [showAd, setShowAd] = useState(false);
 
     const loadMovies = async (isRestart = false) => {
         if (isRestart || gameState !== 'sliding') setGameState('loading');
@@ -138,6 +140,11 @@ const HigherLowerGame = () => {
                     setTopScore(score);
                     localStorage.setItem('higherLowerTopScore', score);
                 }
+                // Track game over count for ad display (every 2nd)
+                const currentCount = parseInt(sessionStorage.getItem('hlGameOverCount') || '0');
+                const newCount = currentCount + 1;
+                sessionStorage.setItem('hlGameOverCount', newCount.toString());
+                setShowAd(newCount % 2 === 0); // Show ad every 2nd game over
                 setGameState('gameover');
              }, 1500);
         }
@@ -166,14 +173,22 @@ const HigherLowerGame = () => {
         <div className="h-[calc(100vh-64px)] bg-black text-white overflow-hidden relative font-sans w-full">
              {/* Game Over Overlay */}
              {gameState === 'gameover' && (
-                <div className="absolute inset-0 z-50 bg-black/95 flex flex-col items-center justify-center animate-in fade-in duration-500">
-                    <Trophy className="text-yellow-400 w-24 h-24 mb-6 animate-bounce" />
-                    <h2 className="text-5xl font-black mb-4">Game Over</h2>
-                    <p className="text-2xl text-gray-400 mb-8">Score: <span className="text-white font-bold">{score}</span></p>
-                    <button onClick={restartGame} className="bg-accent hover:bg-accent-hover text-black font-black text-xl px-10 py-4 rounded-full hover:scale-105 transition flex items-center gap-2 shadow-[0_0_20px_rgba(0,229,255,0.4)]">
-                        <RefreshCcw /> Play Again
+                <div className="absolute inset-0 z-50 bg-black/95 flex flex-col items-center justify-center animate-in fade-in duration-500 overflow-y-auto py-8">
+                    <Trophy className="text-yellow-400 w-20 h-20 mb-4 animate-bounce" />
+                    <h2 className="text-4xl font-black mb-2">Game Over</h2>
+                    <p className="text-xl text-gray-400 mb-4">Score: <span className="text-white font-bold">{score}</span></p>
+                    
+                    {/* Ad Banner - Shows every 2nd game over */}
+                    {showAd && (
+                        <div className="w-full max-w-md px-4 mb-4">
+                            <AdBanner />
+                        </div>
+                    )}
+                    
+                    <button onClick={restartGame} className="bg-accent hover:bg-accent-hover text-black font-black text-lg px-8 py-3 rounded-full hover:scale-105 transition flex items-center gap-2 shadow-[0_0_20px_rgba(0,229,255,0.4)]">
+                        <RefreshCcw size={20} /> Play Again
                     </button>
-                    <Link to="/games" className="mt-8 text-gray-500 hover:text-white underline tracking-widest uppercase text-sm">Back to Arcade</Link>
+                    <Link to="/games" className="mt-6 text-gray-500 hover:text-white underline tracking-widest uppercase text-sm">Back to Arcade</Link>
                 </div>
             )}
 
